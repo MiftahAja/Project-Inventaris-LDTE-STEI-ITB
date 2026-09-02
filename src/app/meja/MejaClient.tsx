@@ -1,0 +1,173 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import DataTable from "@/components/DataTable";
+import { Package, X } from "lucide-react";
+
+interface UnitBarang {
+  id: number;
+  kodeBarang: string;
+  namaBarang: string;
+  kondisiBarang: string;
+  status: string;
+}
+
+interface Meja {
+  id: number;
+  meja: string;
+  ruangLab: string;
+  ruangLabId: number;
+  barangCount: number;
+}
+
+interface RuangLab {
+  id: number;
+  namaRuang: string;
+}
+
+interface MejaClientProps {
+  mejas: Meja[];
+  ruangLabs: RuangLab[];
+  unitBarangByMeja: Record<number, UnitBarang[]>;
+  userRole: string;
+}
+
+export default function MejaClient({
+  mejas,
+  ruangLabs,
+  unitBarangByMeja,
+  userRole,
+}: MejaClientProps) {
+  const router = useRouter();
+  const canWrite = userRole === "admin";
+
+  const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleEdit = (item: Meja) => {
+    router.push(`/meja/edit/${item.id}`);
+  };
+
+  const handleDelete = async (item: Meja) => {
+    try {
+      await fetch(`/api/meja/${item.id}`, { method: "DELETE" });
+      router.refresh();
+    } catch (error) {
+      console.error("Delete error:", error);
+    }
+  };
+
+  const handleViewBarang = (item: Meja) => {
+    setSelectedMeja(item);
+    setShowModal(true);
+  };
+
+  const barangList = selectedMeja ? (unitBarangByMeja[selectedMeja.id] || []) : [];
+
+  return (
+    <div className="space-y-4">
+      <DataTable
+        data={mejas}
+        columns={[
+          { key: "meja", label: "Nomor Meja" },
+          { key: "ruangLab", label: "Ruang Lab" },
+          {
+            key: "barangCount",
+            label: "Jumlah Barang",
+            render: (item) => (
+              <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                {item.barangCount} item
+              </span>
+            ),
+          },
+        ]}
+        title="Daftar Meja"
+        addHref={canWrite ? "/meja/create" : undefined}
+        addLabel="Tambah Meja"
+        searchPlaceholder="Cari nomor meja..."
+        searchKey="meja"
+        onEdit={canWrite ? handleEdit : undefined}
+        onDelete={canWrite ? handleDelete : undefined}
+        onView={handleViewBarang}
+      />
+
+      {/* Modal Lihat Barang */}
+      {showModal && selectedMeja && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in-overlay">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col animate-scale-in">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                  Barang di {selectedMeja.meja}
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {selectedMeja.ruangLab} &middot; {barangList.length} item
+                </p>
+              </div>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg btn-press"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-4">
+              {barangList.length === 0 ? (
+                <div className="text-center py-8">
+                  <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400">Tidak ada barang di meja ini</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {barangList.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 card-hover"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {item.namaBarang}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {item.kodeBarang}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            item.kondisiBarang === "baik"
+                              ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                              : item.kondisiBarang === "rusak"
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          }`}
+                        >
+                          {item.kondisiBarang}
+                        </span>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            item.status === "Tersedia"
+                              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              : item.status === "Dipinjam"
+                              ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
+                              : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
