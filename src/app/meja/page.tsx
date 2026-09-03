@@ -2,6 +2,12 @@ import { requireAuth, getAssignedLabIds } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import MejaClient from "./MejaClient";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Meja | Inventaris LDTE",
+  description : ""
+}
 
 export default async function MejaPage() {
   const session = await requireAuth();
@@ -44,6 +50,11 @@ export default async function MejaPage() {
     });
   }
 
+  // Get assigned lab IDs for petugas
+  const assignedLabIds = session.role === "petugas"
+    ? await getAssignedLabIds(Number(session.userId))
+    : [];
+
   return (
     <AuthLayout userId={Number(session.userId)}>
       <MejaClient
@@ -60,6 +71,7 @@ export default async function MejaPage() {
         }))}
         unitBarangByMeja={unitBarangByMeja}
         userRole={session.role}
+        assignedLabIds={assignedLabIds}
       />
     </AuthLayout>
   );

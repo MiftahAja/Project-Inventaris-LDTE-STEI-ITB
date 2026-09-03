@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import ThemeScript from "@/components/ThemeScript";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,18 +18,6 @@ export const metadata: Metadata = {
   description: "Sistem manajemen inventaris laboratorium terintegrasi",
 };
 
-// Inline script to prevent dark mode flash (FOUC)
-const themeScript = `
-  (function() {
-    try {
-      var mode = localStorage.getItem('darkMode');
-      if (mode === 'true' || (mode === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-      }
-    } catch(e) {}
-  })();
-`;
-
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -37,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <ThemeScript />
       </head>
       <body className="min-h-full flex flex-col transition-colors duration-300">{children}</body>
     </html>

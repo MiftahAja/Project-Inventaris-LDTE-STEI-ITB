@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   LayoutDashboard,
   Package,
@@ -15,6 +16,7 @@ import {
   BookOpen,
   FileText,
   Headphones,
+  Download,
   LogOut,
   Moon,
   Sun,
@@ -42,9 +44,9 @@ const menuItems = [
     items: [
       { name: "Dashboard", href: "/home", icon: LayoutDashboard },
       { name: "Barang", href: "/barang", icon: Package },
-      { name: "Unit Barang", href: "/unit-barang", icon: Boxes },
       { name: "Ruang Lab", href: "/ruang-lab", icon: DoorOpen },
       { name: "Meja", href: "/meja", icon: TableProperties },
+      { name: "Unit Barang", href: "/unit-barang", icon: Boxes },
     ],
   },
   {
@@ -59,6 +61,7 @@ const menuItems = [
       { name: "Mutasi Barang", href: "/mutasi-stok", icon: ArrowLeftRight },
       { name: "Activity Log", href: "/activity-log", icon: FileText },
       { name: "Manajemen Penugasan", href: "/assignments", icon: ClipboardList },
+      { name: "Export Data", href: "/export", icon: Download },
     ],
     roles: ["admin"],
   },
@@ -78,6 +81,7 @@ export default function Sidebar({ user, children }: SidebarProps) {
   const [darkMode, setDarkMode] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     // Sync with the class already set by the inline script to prevent FOUC
@@ -105,9 +109,7 @@ export default function Sidebar({ user, children }: SidebarProps) {
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
       {/* Logo & Brand */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-center w-8 h-8 bg-blue-600 rounded-lg">
-          <Package className="w-5 h-5 text-white" />
-        </div>
+        <img src="/logo.svg" alt="Logo LDTE" className="w-8 h-8" />
         {!collapsed && (
           <span className="text-lg font-bold text-gray-900 dark:text-white">
             Inventaris LDTE
@@ -204,15 +206,28 @@ export default function Sidebar({ user, children }: SidebarProps) {
         </div>
 
         {/* Logout */}
-        <form action="/api/auth/logout" method="POST">
-          <button
-            type="submit"
-            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            {!collapsed && <span>Logout</span>}
-          </button>
-        </form>
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+        >
+          <LogOut className="w-5 h-5" />
+          {!collapsed && <span>Logout</span>}
+        </button>
+        <ConfirmDialog
+          isOpen={showLogoutConfirm}
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={async () => {
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = "/api/auth/logout";
+            document.body.appendChild(form);
+            form.submit();
+          }}
+          title="Konfirmasi Logout"
+          description="Apakah benar anda ingin logout?"
+          confirmLabel="Ya, Logout"
+          cancelLabel="Tidak"
+        />
       </div>
     </div>
   );
@@ -245,14 +260,15 @@ export default function Sidebar({ user, children }: SidebarProps) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Mobile Navbar */}
-        <header className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 lg:hidden">                <button
-                  onClick={() => setMobileOpen(true)}
-                  className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
-                >
-                  <Menu className="w-5 h-5" />
-                </button>
+        <header className="flex items-center justify-between px-3 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 lg:hidden">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <div className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-blue-600" />
+            <img src="/logo.svg" alt="Logo LDTE" className="w-5 h-5" />
             <span className="font-bold text-gray-900 dark:text-white">LDTE</span>
           </div>
           <button
@@ -281,7 +297,7 @@ export default function Sidebar({ user, children }: SidebarProps) {
         </button>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 animate-fade-in">{children}</main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 animate-fade-in">{children}</main>
       </div>
     </div>
   );

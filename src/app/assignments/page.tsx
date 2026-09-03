@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import AssignmentClient from "./AssignmentClient";
 import { DoorOpen, Users, AlertCircle } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Penugasan | Inventaris LDTE",
+  description : ""
+}
 
 export default async function AssignmentsPage() {
   const session = await requireAdmin();

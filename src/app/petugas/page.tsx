@@ -2,6 +2,12 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import PetugasClient from "./PetugasClient";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Petugas | Inventaris LDTE",
+  description : ""
+}
 
 export default async function PetugasPage() {
   const session = await requireAdmin();

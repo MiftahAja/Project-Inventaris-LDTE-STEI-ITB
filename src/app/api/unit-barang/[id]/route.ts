@@ -13,11 +13,46 @@ export async function PUT(
     const body = await req.json();
     const { barangId, kodeBarang, kondisiBarang, status, ruangLabId, mejaId } = body;
 
-    if (ruangLabId) {
-      const canWrite = await canWriteToLab(Number(session.userId), Number(ruangLabId));
+    // Get existing unit barang to check lab access
+    const existingUnit = await db.unitBarang.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!existingUnit) {
+      return NextResponse.json({ error: "Unit barang tidak ditemukan" }, { status: 404 });
+    }
+
+    // Check write permission for the existing unit's lab
+    if (existingUnit.ruangLabId) {
+      const canWrite = await canWriteToLab(Number(session.userId), Number(existingUnit.ruangLabId));
       if (!canWrite) {
         return NextResponse.json({ error: "Tidak memiliki akses ke lab ini" }, { status: 403 });
       }
+    }
+
+    // If changing to a different lab, also check access to the new lab
+    if (ruangLabId && BigInt(ruangLabId) !== existingUnit.ruangLabId) {
+      const canWriteNew = await canWriteToLab(Number(session.userId), Number(ruangLabId));
+      if (!canWriteNew) {
+        return NextResponse.json({ error: "Tidak memiliki akses ke lab tujuan" }, { status: 403 });
+      }
+    }
+
+    // Check duplicate kodeBarang in the target lab (excluding current unit)
+    const targetLabId = ruangLabId ? BigInt(ruangLabId) : existingUnit.ruangLabId;
+    const existingKode = await db.unitBarang.findFirst({
+      where: {
+        kodeBarang,
+        ruangLabId: targetLabId,
+        id: { not: BigInt(id) },
+      },
+    });
+
+    if (existingKode) {
+      return NextResponse.json(
+        { error: `Kode barang "${kodeBarang}" sudah ada di lab ini` },
+        { status: 400 }
+      );
     }
 
     const unitBarang = await db.unitBarang.update({
@@ -62,6 +97,14 @@ export async function DELETE(
 
     if (!unitBarang) {
       return NextResponse.json({ error: "Unit barang tidak ditemukan" }, { status: 404 });
+    }
+
+    // Check write permission for the unit's lab
+    if (unitBarang.ruangLabId) {
+      const canWrite = await canWriteToLab(Number(session.userId), Number(unitBarang.ruangLabId));
+      if (!canWrite) {
+        return NextResponse.json({ error: "Tidak memiliki akses ke lab ini" }, { status: 403 });
+      }
     }
 
     await db.unitBarang.delete({

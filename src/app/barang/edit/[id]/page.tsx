@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import BarangForm from "../../BarangForm";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Edit Barang",
+  description : ""
+}
 
 export default async function EditBarangPage({
   params,

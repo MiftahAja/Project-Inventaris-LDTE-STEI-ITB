@@ -154,11 +154,7 @@ export default function DataTable<T extends Record<string, any>>({
                           )}
                           {onDelete && (
                             <button
-                              onClick={() => {
-                                if (confirm("Yakin ingin menghapus?")) {
-                                  onDelete(item);
-                                }
-                              }}
+                              onClick={() => onDelete(item)}
                               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg btn-press"
                             >
                               <Trash2 className="w-4 h-4" />

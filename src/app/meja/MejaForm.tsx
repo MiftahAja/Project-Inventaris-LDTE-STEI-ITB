@@ -12,9 +12,15 @@ interface MejaFormProps {
     ruangLabId: number;
   };
   ruangLabs: { id: number; namaRuang: string }[];
+  assignedLabIds: number[];
+  userRole: string;
 }
 
-export default function MejaForm({ initialData, ruangLabs }: MejaFormProps) {
+export default function MejaForm({ initialData, ruangLabs, assignedLabIds, userRole }: MejaFormProps) {
+  // Filter labs based on role
+  const availableRuangLabs = userRole === "admin"
+    ? ruangLabs
+    : ruangLabs.filter((rl) => assignedLabIds.includes(rl.id));
   const router = useRouter();
   const [meja, setMeja] = useState(initialData?.meja || "");
   const [ruangLabId, setRuangLabId] = useState(initialData?.ruangLabId?.toString() || "");
@@ -83,7 +89,7 @@ export default function MejaForm({ initialData, ruangLabs }: MejaFormProps) {
               className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Pilih Ruang Lab</option>
-              {ruangLabs.map((rl) => (
+              {availableRuangLabs.map((rl) => (
                 <option key={rl.id} value={rl.id}>
                   {rl.namaRuang}
                 </option>

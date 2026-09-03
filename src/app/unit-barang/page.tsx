@@ -2,6 +2,12 @@ import { requireAuth, getAssignedLabIds } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import UnitBarangClient from "./UnitBarangClient";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Unit Barang | Inventaris LDTE",
+  description : ""
+}
 
 export default async function UnitBarangPage() {
   const session = await requireAuth();
@@ -29,6 +35,11 @@ export default async function UnitBarangPage() {
     include: { ruangLab: true },
   });
 
+  // Get assigned lab IDs for petugas
+  const assignedLabIds = session.role === "petugas"
+    ? await getAssignedLabIds(Number(session.userId))
+    : [];
+
   return (
     <AuthLayout userId={Number(session.userId)}>
       <UnitBarangClient
@@ -55,6 +66,7 @@ export default async function UnitBarangPage() {
           namaRuang: m.ruangLab?.namaRuang || "-",
         }))}
         userRole={session.role}
+        assignedLabIds={assignedLabIds}
       />
     </AuthLayout>
   );

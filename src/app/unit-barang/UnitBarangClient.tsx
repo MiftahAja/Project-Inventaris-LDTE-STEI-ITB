@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import DataTable from "@/components/DataTable";
-import { Filter, X } from "lucide-react";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import { Filter, X, } from "lucide-react";
 
 interface UnitBarang {
   id: number;
@@ -35,6 +36,7 @@ interface UnitBarangClientProps {
   ruangLabs: RuangLab[];
   mejas: Meja[];
   userRole: string;
+  assignedLabIds: number[];
 }
 
 export default function UnitBarangClient({
@@ -42,12 +44,14 @@ export default function UnitBarangClient({
   ruangLabs,
   mejas,
   userRole,
+  assignedLabIds,
 }: UnitBarangClientProps) {
   const router = useRouter();
-  const canWrite = userRole === "admin";
+  const canWrite = userRole === "admin" || assignedLabIds.length > 0;
 
   const [filterRuangLab, setFilterRuangLab] = useState<number | "">("");
   const [filterMeja, setFilterMeja] = useState<number | "">("");
+  const [deleteTarget, setDeleteTarget] = useState<UnitBarang | null>(null);
 
   // Filter mejas based on selected ruang lab
   const availableMejas = filterRuangLab !== ""
@@ -65,9 +69,11 @@ export default function UnitBarangClient({
     router.push(`/unit-barang/edit/${item.id}`);
   };
 
-  const handleDelete = async (item: UnitBarang) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await fetch(`/api/unit-barang/${item.id}`, { method: "DELETE" });
+      await fetch(`/api/unit-barang/${deleteTarget.id}`, { method: "DELETE" });
+      setDeleteTarget(null);
       router.refresh();
     } catch (error) {
       console.error("Delete error:", error);
@@ -88,15 +94,17 @@ export default function UnitBarangClient({
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter</span>
-          {hasActiveFilter && (
-            <button
-              onClick={clearFilters}
-              className="ml-auto flex items-center gap-1 text-xs text-red-500 hover:text-red-600 btn-press"
-            >
-              <X className="w-3 h-3" />
-              Reset
-            </button>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            {hasActiveFilter && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 btn-press"
+              >
+                <X className="w-3 h-3" />
+                Reset
+              </button>
+            )}
+          </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
@@ -185,7 +193,15 @@ export default function UnitBarangClient({
         searchPlaceholder="Cari kode barang..."
         searchKey="kodeBarang"
         onEdit={canWrite ? handleEdit : undefined}
-        onDelete={canWrite ? handleDelete : undefined}
+        onDelete={canWrite ? (item) => setDeleteTarget(item) : undefined}
+      />
+      <ConfirmDeleteModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        requiredText={deleteTarget?.kodeBarang || ""}
+        title="Hapus Unit Barang"
+        description={`Ketik kode barang \"${deleteTarget?.kodeBarang || ""}\" untuk menghapusnya.`}
       />
     </div>
   );

@@ -2,6 +2,12 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import BarangClient from "./BarangClient";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Barang | Inventaris LDTE",
+  description : ""
+}
 
 export default async function BarangPage() {
   const session = await requireAuth();

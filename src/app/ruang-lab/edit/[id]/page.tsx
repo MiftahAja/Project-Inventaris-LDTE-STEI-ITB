@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import RuangLabForm from "../../RuangLabForm";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Edit Ruang Lab",
+  description : ""
+}
 
 export default async function EditRuangLabPage({
   params,

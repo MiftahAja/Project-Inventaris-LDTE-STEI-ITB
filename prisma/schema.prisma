@@ -174,6 +174,7 @@ model Meja {
   ruangLab    RuangLab     @relation(fields: [ruangLabId], references: [id], onDelete: Restrict)
   unitBarangs UnitBarang[]
 
+  @@unique([meja, ruangLabId])
   @@index([ruangLabId], map: "idx_mejas_ruang_lab_id")
   @@map("mejas")
 }
@@ -181,7 +182,7 @@ model Meja {
 model UnitBarang {
   id            BigInt    @id @default(autoincrement())
   barangId      BigInt    @map("barang_id")
-  kodeBarang    String    @map("kode_barang") @unique @db.VarChar(255)
+  kodeBarang    String    @map("kode_barang") @db.VarChar(255)
   kondisiBarang String    @map("kondisi_barang") @db.VarChar(255)
   status        String    @default("Tersedia") @db.VarChar(255)
   ruangLabId    BigInt?   @map("ruang_lab_id")
@@ -198,6 +199,7 @@ model UnitBarang {
   peminjamans     Peminjaman[]
   peminjamanPeralatan PeminjamanPeralatan[]
 
+  @@unique([kodeBarang, ruangLabId])
   @@index([kodeBarang], map: "idx_unit_barangs_kode_barang")
   @@index([status], map: "idx_unit_barangs_status")
   @@index([kondisiBarang], map: "idx_unit_barangs_kondisi_barang")

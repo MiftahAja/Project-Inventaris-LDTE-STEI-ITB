@@ -13,11 +13,44 @@ export async function PUT(
     const body = await req.json();
     const { meja, ruangLabId } = body;
 
-    if (ruangLabId) {
-      const canWrite = await canWriteToLab(Number(session.userId), Number(ruangLabId));
-      if (!canWrite) {
-        return NextResponse.json({ error: "Tidak memiliki akses ke lab ini" }, { status: 403 });
+    // Get existing meja to check lab access
+    const existingMeja = await db.meja.findUnique({
+      where: { id: BigInt(id) },
+    });
+
+    if (!existingMeja) {
+      return NextResponse.json({ error: "Meja tidak ditemukan" }, { status: 404 });
+    }
+
+    // Check write permission for the existing meja's lab
+    const canWrite = await canWriteToLab(Number(session.userId), Number(existingMeja.ruangLabId));
+    if (!canWrite) {
+      return NextResponse.json({ error: "Tidak memiliki akses ke lab ini" }, { status: 403 });
+    }
+
+    // If changing to a different lab, also check access to the new lab
+    if (ruangLabId && BigInt(ruangLabId) !== existingMeja.ruangLabId) {
+      const canWriteNew = await canWriteToLab(Number(session.userId), Number(ruangLabId));
+      if (!canWriteNew) {
+        return NextResponse.json({ error: "Tidak memiliki akses ke lab tujuan" }, { status: 403 });
       }
+    }
+
+    // Check if meja name already exists in the target lab (excluding current meja)
+    const targetLabId = ruangLabId ? BigInt(ruangLabId) : existingMeja.ruangLabId;
+    const duplicateMeja = await db.meja.findFirst({
+      where: {
+        meja,
+        ruangLabId: targetLabId,
+        id: { not: BigInt(id) },
+      },
+    });
+
+    if (duplicateMeja) {
+      return NextResponse.json(
+        { error: `Meja "${meja}" sudah ada di lab ini` },
+        { status: 400 }
+      );
     }
 
     const updatedMeja = await db.meja.update({

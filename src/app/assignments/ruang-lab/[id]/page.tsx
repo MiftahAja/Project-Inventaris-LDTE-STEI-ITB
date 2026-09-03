@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import AssignmentDetailClient from "./AssignmentDetailClient";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Kelola Penugasan",
+  description : ""
+}
 
 export default async function AssignmentDetailPage({
   params,

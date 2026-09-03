@@ -2,6 +2,12 @@ import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import RuangLabClient from "./RuangLabClient";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Ruang Lab | Inventaris LDTE",
+  description : ""
+}
 
 export default async function RuangLabPage() {
   const session = await requireAuth();

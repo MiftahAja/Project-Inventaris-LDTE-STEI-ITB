@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import PetugasForm from "../../PetugasForm";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Edit Petugas",
+  description : ""
+}
 
 export default async function EditPetugasPage({
   params,

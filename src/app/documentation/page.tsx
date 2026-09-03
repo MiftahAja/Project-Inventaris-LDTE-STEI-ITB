@@ -1,6 +1,12 @@
 import { requireAuth } from "@/lib/auth";
 import AuthLayout from "@/components/AuthLayout";
 import { BookOpen } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Documentation | Inventaris LDTE",
+  description : ""
+}
 
 export default async function DocumentationPage() {
   const session = await requireAuth();

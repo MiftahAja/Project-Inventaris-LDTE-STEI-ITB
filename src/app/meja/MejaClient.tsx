@@ -31,6 +31,7 @@ interface MejaClientProps {
   ruangLabs: RuangLab[];
   unitBarangByMeja: Record<number, UnitBarang[]>;
   userRole: string;
+  assignedLabIds: number[];
 }
 
 export default function MejaClient({
@@ -38,9 +39,10 @@ export default function MejaClient({
   ruangLabs,
   unitBarangByMeja,
   userRole,
+  assignedLabIds,
 }: MejaClientProps) {
   const router = useRouter();
-  const canWrite = userRole === "admin";
+  const canWrite = userRole === "admin" || assignedLabIds.length > 0;
 
   const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null);
   const [showModal, setShowModal] = useState(false);

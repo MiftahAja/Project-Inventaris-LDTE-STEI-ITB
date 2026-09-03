@@ -1,6 +1,12 @@
 import { requireAuth } from "@/lib/auth";
 import AuthLayout from "@/components/AuthLayout";
 import { FileText } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Panduan Aplikasi | Inventaris LDTE",
+  description : ""
+}
 
 export default async function PanduanAplikasiPage() {
   const session = await requireAuth();
@@ -64,7 +70,7 @@ export default async function PanduanAplikasiPage() {
               </h3>
               <p>
                 Klik ikon bulan/matahari di sidebar (desktop) atau navbar (mobile) untuk
-                beralih antara mode terang dan gelap.
+                beralih antara mode terang dan gelap. (In Progress)
               </p>
             </section>
 

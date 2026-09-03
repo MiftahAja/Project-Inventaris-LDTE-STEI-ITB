@@ -21,14 +21,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Check duplicate
-    const existing = await db.unitBarang.findFirst({
-      where: { barangId: BigInt(barangId), mejaId: mejaId ? BigInt(mejaId) : null },
+    // Check duplicate kodeBarang in the same lab
+    const existingKode = await db.unitBarang.findFirst({
+      where: {
+        kodeBarang,
+        ruangLabId: ruangLabId ? BigInt(ruangLabId) : null,
+      },
     });
 
-    if (existing) {
+    if (existingKode) {
       return NextResponse.json(
-        { error: "Unit barang dengan kombinasi barang dan meja yang sama sudah ada" },
+        { error: `Kode barang "${kodeBarang}" sudah ada di lab ini` },
         { status: 400 }
       );
     }

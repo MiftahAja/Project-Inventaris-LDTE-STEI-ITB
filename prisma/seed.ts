@@ -4,7 +4,7 @@ import * as bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding database...\n");
+  console.log("Seeding database...\n");
 
   // =============================================
   // 1. Admin User
@@ -20,7 +20,7 @@ async function main() {
       role: "admin",
     },
   });
-  console.log(`✅ Admin user: ${admin.email} / admin123`);
+  console.log(` Admin user: ${admin.email} / admin123`);
 
   // Admin 2
   const admin2Password = await bcrypt.hash("adminelektro", 10);
@@ -34,7 +34,7 @@ async function main() {
       role: "admin",
     },
   });
-  console.log(`✅ Admin 2: ${admin2.email} / adminelektro`);
+  console.log(` Admin 2: ${admin2.email} / adminelektro`);
 
   // =============================================
   // 2. Petugas Users
@@ -83,8 +83,8 @@ async function main() {
       alamat: "Jl. Sudirman No. 25, Bandung",
     },
   });
-  console.log(`✅ Petugas: ${petugas1.email} / petugas123`);
-  console.log(`✅ Petugas: ${petugas2.email} / petugas123`);
+  console.log(` Petugas: ${petugas1.email} / petugas123`);
+  console.log(` Petugas: ${petugas2.email} / petugas123`);
 
   // =============================================
   // 3. Ruang Lab
@@ -109,7 +109,7 @@ async function main() {
       deskripsi: "Laboratorium untuk praktikum jaringan komputer",
     },
   });
-  console.log(`✅ Ruang Lab: ${lab1.namaRuang}, ${lab2.namaRuang}, ${lab3.namaRuang}`);
+  console.log(` Ruang Lab: ${lab1.namaRuang}, ${lab2.namaRuang}, ${lab3.namaRuang}`);
 
   // =============================================
   // 4. Meja
@@ -144,7 +144,7 @@ async function main() {
     });
     mejaData.push(meja);
   }
-  console.log(`✅ Meja: ${mejaData.length} meja dibuat`);
+  console.log(` Meja: ${mejaData.length} meja dibuat`);
 
   // =============================================
   // 5. Barang (Master Data)
@@ -167,7 +167,7 @@ async function main() {
     const barang = await prisma.barang.create({ data: b });
     barangs.push(barang);
   }
-  console.log(`✅ Barang: ${barangs.length} item dibuat`);
+  console.log(` Barang: ${barangs.length} item dibuat`);
 
   // =============================================
   // 6. Unit Barang
@@ -195,7 +195,7 @@ async function main() {
     const unit = await prisma.unitBarang.create({ data: ub });
     unitBarangs.push(unit);
   }
-  console.log(`✅ Unit Barang: ${unitBarangs.length} unit dibuat`);
+  console.log(` Unit Barang: ${unitBarangs.length} unit dibuat`);
 
   // =============================================
   // 7. Mutasi Stok
@@ -223,7 +223,7 @@ async function main() {
   }
 
   await prisma.mutasiStok.createMany({ data: mutasiData });
-  console.log(`✅ Mutasi Stok: ${mutasiData.length} catatan dibuat`);
+  console.log(` Mutasi Stok: ${mutasiData.length} catatan dibuat`);
 
   // =============================================
   // 8. Assignments
@@ -245,7 +245,7 @@ async function main() {
       assignedBy: admin.id,
     },
   });
-  console.log("✅ Assignments: 2 penugasan aktif");
+  console.log(" Assignments: 2 penugasan aktif");
 
   // =============================================
   // 9. Activity Logs
@@ -283,7 +283,7 @@ async function main() {
       },
     ],
   });
-  console.log("✅ Activity Logs: 4 catatan dibuat");
+  console.log(" Activity Logs: 4 catatan dibuat");
 
   // =============================================
   // 10. Fakultas & Program Studi
@@ -334,7 +334,7 @@ async function main() {
       },
     ],
   });
-  console.log("✅ Akademik: 1 fakultas, 2 prodi, 4 mata kuliah");
+  console.log(" Akademik: 1 fakultas, 2 prodi, 4 mata kuliah");
 
   // =============================================
   // 11. Global Config
@@ -345,10 +345,10 @@ async function main() {
       lineoaLdte: "@ldte_official",
     },
   });
-  console.log("✅ Global Config dibuat");
+  console.log(" Global Config dibuat");
 
-  console.log("\n🎉 Seeding selesai!");
-  console.log("\n📋 Akun yang dibuat:");
+  console.log("\n Seeding selesai!");
+  console.log("\n Akun yang dibuat:");
   console.log("   Admin   : admin@ldte.ac.id / admin123");
   console.log("   Admin   : adminelektro@itb.ac.id / adminelektro");
   console.log("   Petugas : andi@ldte.ac.id / petugas123");
@@ -357,7 +357,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error("❌ Seed error:", e);
+    console.error(" Seed error:", e);
     process.exit(1);
   })
   .finally(async () => {

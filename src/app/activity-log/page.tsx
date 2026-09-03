@@ -2,6 +2,12 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import ActivityLogClient from "./ActivityLogClient";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Log Aktivitas | Inventaris LDTE",
+  description : ""
+}
 
 export default async function ActivityLogPage() {
   const session = await requireAdmin();

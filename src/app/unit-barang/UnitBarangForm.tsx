@@ -18,6 +18,8 @@ interface UnitBarangFormProps {
   barangs: { id: number; namaBarang: string }[];
   ruangLabs: { id: number; namaRuang: string }[];
   mejas: { id: number; meja: string; ruangLabId: number }[];
+  assignedLabIds: number[];
+  userRole: string;
 }
 
 export default function UnitBarangForm({
@@ -25,6 +27,8 @@ export default function UnitBarangForm({
   barangs,
   ruangLabs,
   mejas,
+  assignedLabIds,
+  userRole,
 }: UnitBarangFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -38,8 +42,19 @@ export default function UnitBarangForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Filter labs based on role
+  const availableRuangLabs = userRole === "admin"
+    ? ruangLabs
+    : ruangLabs.filter((rl) => assignedLabIds.includes(rl.id));
+
   const filteredMejas = mejas.filter(
-    (m) => !formData.ruangLabId || m.ruangLabId === Number(formData.ruangLabId)
+    (m) => {
+      // If no lab selected, show only mejas from assigned labs (or all for admin)
+      if (!formData.ruangLabId) {
+        return userRole === "admin" || assignedLabIds.includes(m.ruangLabId);
+      }
+      return m.ruangLabId === Number(formData.ruangLabId);
+    }
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -148,12 +163,12 @@ export default function UnitBarangForm({
                 }
                 className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Pilih Ruang Lab</option>
-                {ruangLabs.map((rl) => (
-                  <option key={rl.id} value={rl.id}>
-                    {rl.namaRuang}
-                  </option>
-                ))}
+              <option value="">Pilih Ruang Lab</option>
+              {availableRuangLabs.map((rl) => (
+                <option key={rl.id} value={rl.id}>
+                  {rl.namaRuang}
+                </option>
+              ))}
               </select>
             </div>
 

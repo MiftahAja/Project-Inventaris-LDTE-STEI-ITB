@@ -3,6 +3,12 @@ import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
 import DashboardCharts from "@/components/DashboardCharts";
 import { Package, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title : "Home | Inventaris LDTE",
+  description : ""
+}
 
 export default async function HomePage() {
   const session = await requireAuth();
@@ -75,26 +81,26 @@ export default async function HomePage() {
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <div
                 key={stat.title}
-                className={`${stat.bgColor} rounded-xl p-5 border border-gray-200 dark:border-gray-700 card-hover animate-slide-up`}
+                className={`${stat.bgColor} rounded-xl p-4 sm:p-5 border border-gray-200 dark:border-gray-700 card-hover animate-slide-up`}
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 truncate">
                       {stat.title}
                     </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                    <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`${stat.color} p-3 rounded-xl shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
+                  <div className={`${stat.color} p-2 sm:p-3 rounded-xl shadow-lg shrink-0`}>        
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                 </div>
               </div>
