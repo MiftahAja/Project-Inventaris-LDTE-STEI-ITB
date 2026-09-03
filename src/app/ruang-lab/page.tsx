@@ -12,20 +12,30 @@ export const metadata: Metadata = {
 export default async function RuangLabPage() {
   const session = await requireAuth();
 
-  const ruangLabs = await db.ruangLab.findMany({
-    include: { _count: { select: { unitBarangs: true } } },
-    orderBy: { createdAt: "desc" },
-  });
+  const [ruangLabs, total] = await Promise.all([
+    db.ruangLab.findMany({
+      select: {
+        id: true,
+        namaRuang: true,
+        deskripsi: true,
+        _count: { select: { unitBarangs: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    db.ruangLab.count(),
+  ]);
 
   return (
     <AuthLayout userId={Number(session.userId)}>
       <RuangLabClient
-        ruangLabs={ruangLabs.map((rl) => ({
+        initialRuangLabs={ruangLabs.map((rl) => ({
           id: Number(rl.id),
           namaRuang: rl.namaRuang,
           deskripsi: rl.deskripsi || "",
           unitCount: rl._count.unitBarangs,
         }))}
+        initialTotal={total}
         userRole={session.role}
       />
     </AuthLayout>

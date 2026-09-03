@@ -56,9 +56,13 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const session = await requireAuth();
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const skip = (page - 1) * pageSize;
 
     let where: Record<string, unknown> = {};
 
@@ -68,12 +72,23 @@ export async function GET() {
       where = { ruangLabId: { in: labIds } };
     }
 
-    const mejas = await db.meja.findMany({
-      where,
-      include: { ruangLab: true },
-      orderBy: { createdAt: "desc" },
+    const [mejas, total] = await Promise.all([
+      db.meja.findMany({
+        where,
+        include: { ruangLab: true },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      db.meja.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      data: mejas,
+      total,
+      page,
+      pageSize,
     });
-    return NextResponse.json(mejas);
   } catch (error) {
     console.error("Get mejas error:", error);
     return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });

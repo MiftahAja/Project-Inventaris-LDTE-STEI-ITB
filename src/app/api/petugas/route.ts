@@ -50,13 +50,29 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const users = await db.user.findMany({
-      where: { role: "petugas" },
-      orderBy: { createdAt: "desc" },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const skip = (page - 1) * pageSize;
+
+    const [users, total] = await Promise.all([
+      db.user.findMany({
+        where: { role: "petugas" },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      db.user.count({ where: { role: "petugas" } }),
+    ]);
+
+    return NextResponse.json({
+      data: users,
+      total,
+      page,
+      pageSize,
     });
-    return NextResponse.json(users);
   } catch (error) {
     console.error("Get petugas error:", error);
     return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });

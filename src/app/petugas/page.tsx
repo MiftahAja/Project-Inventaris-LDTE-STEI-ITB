@@ -12,22 +12,37 @@ export const metadata: Metadata = {
 export default async function PetugasPage() {
   const session = await requireAdmin();
 
-  const users = await db.user.findMany({
-    where: { role: "petugas" },
-    include: { tambahPetugas: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [users, total] = await Promise.all([
+    db.user.findMany({
+      where: { role: "petugas" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        tambahPetugas: {
+          select: {
+            noTelp: true,
+            alamat: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    db.user.count({ where: { role: "petugas" } }),
+  ]);
 
   return (
     <AuthLayout userId={Number(session.userId)}>
       <PetugasClient
-        users={users.map((u) => ({
+        initialUsers={users.map((u) => ({
           id: Number(u.id),
           name: u.name,
           email: u.email,
           noTelp: u.tambahPetugas?.noTelp || "-",
           alamat: u.tambahPetugas?.alamat || "-",
         }))}
+        initialTotal={total}
       />
     </AuthLayout>
   );

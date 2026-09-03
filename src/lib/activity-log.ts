@@ -10,20 +10,19 @@ export async function logActivity(params: {
   causerId?: number;
   properties?: Record<string, unknown>;
 }) {
-  try {
-    await db.activityLog.create({
-      data: {
-        logName: params.logName || "default",
-        description: params.description,
-        subjectType: params.subjectType || null,
-        subjectId: params.subjectId || null,
-        event: params.event || null,
-        causerType: params.causerType || null,
-        causerId: params.causerId || null,
-        properties: (params.properties as Record<string, string>) || undefined,
-      },
-    });
-  } catch (error) {
+  // Fire and forget to avoid blocking main request
+  db.activityLog.create({
+    data: {
+      logName: params.logName || "default",
+      description: params.description,
+      subjectType: params.subjectType || null,
+      subjectId: params.subjectId || null,
+      event: params.event || null,
+      causerType: params.causerType || null,
+      causerId: params.causerId || null,
+      properties: (params.properties as Record<string, string>) || undefined,
+    },
+  }).catch((error) => {
     console.error("Failed to log activity:", error);
-  }
+  });
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import { Package, X } from "lucide-react";
 
@@ -21,31 +21,56 @@ interface Meja {
   barangCount: number;
 }
 
-interface RuangLab {
-  id: number;
-  namaRuang: string;
-}
-
 interface MejaClientProps {
-  mejas: Meja[];
-  ruangLabs: RuangLab[];
+  initialMejas: Meja[];
+  initialTotal: number;
   unitBarangByMeja: Record<number, UnitBarang[]>;
   userRole: string;
   assignedLabIds: number[];
 }
 
 export default function MejaClient({
-  mejas,
-  ruangLabs,
+  initialMejas,
+  initialTotal,
   unitBarangByMeja,
   userRole,
   assignedLabIds,
 }: MejaClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const canWrite = userRole === "admin" || assignedLabIds.length > 0;
+
+  const [mejas, setMejas] = useState<Meja[]>(initialMejas);
+  const [total, setTotal] = useState(initialTotal);
+  const [loading, setLoading] = useState(false);
 
   const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null);
   const [showModal, setShowModal] = useState(false);
+
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = 10;
+
+  const fetchData = useCallback(async (page: number) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/meja?page=${page}&pageSize=${pageSize}`);
+      const result = await response.json();
+      setMejas(result.data);
+      setTotal(result.total);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page, fetchData]);
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/meja?page=${newPage}`);
+  };
 
   const handleEdit = (item: Meja) => {
     router.push(`/meja/edit/${item.id}`);
@@ -54,7 +79,7 @@ export default function MejaClient({
   const handleDelete = async (item: Meja) => {
     try {
       await fetch(`/api/meja/${item.id}`, { method: "DELETE" });
-      router.refresh();
+      fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -92,6 +117,11 @@ export default function MejaClient({
         onEdit={canWrite ? handleEdit : undefined}
         onDelete={canWrite ? handleDelete : undefined}
         onView={handleViewBarang}
+        // Pagination props
+        totalItems={total}
+        currentPage={page}
+        onPageChange={handlePageChange}
+        itemsPerPage={pageSize}
       />
 
       {/* Modal Lihat Barang */}

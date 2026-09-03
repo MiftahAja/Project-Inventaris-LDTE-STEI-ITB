@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
-import { barangSchema } from "@/lib/validators";
 
 interface Barang {
   id: number;
@@ -13,14 +12,45 @@ interface Barang {
 }
 
 interface BarangClientProps {
-  barangs: Barang[];
+  initialBarangs: Barang[];
+  initialTotal: number;
   userRole: string;
 }
 
-export default function BarangClient({ barangs, userRole }: BarangClientProps) {
+export default function BarangClient({ initialBarangs, initialTotal, userRole }: BarangClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isAdmin = userRole === "admin";
   const [deleteTarget, setDeleteTarget] = useState<Barang | null>(null);
+  
+  const [barangs, setBarangs] = useState<Barang[]>(initialBarangs);
+  const [total, setTotal] = useState(initialTotal);
+  const [loading, setLoading] = useState(false);
+
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = 10;
+
+  const fetchData = useCallback(async (page: number) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/barang?page=${page}&pageSize=${pageSize}`);
+      const result = await response.json();
+      setBarangs(result.data);
+      setTotal(result.total);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page, fetchData]);
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/barang?page=${newPage}`);
+  };
 
   const handleEdit = (item: Barang) => {
     router.push(`/barang/edit/${item.id}`);
@@ -31,7 +61,7 @@ export default function BarangClient({ barangs, userRole }: BarangClientProps) {
     try {
       await fetch(`/api/barang/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
-      router.refresh();
+      fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -51,6 +81,11 @@ export default function BarangClient({ barangs, userRole }: BarangClientProps) {
         searchKey="namaBarang"
         onEdit={isAdmin ? handleEdit : undefined}
         onDelete={isAdmin ? (item) => setDeleteTarget(item) : undefined}
+        // Pagination props
+        totalItems={total}
+        currentPage={page}
+        onPageChange={handlePageChange}
+        itemsPerPage={pageSize}
       />
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}

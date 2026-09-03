@@ -33,12 +33,28 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const ruangLabs = await db.ruangLab.findMany({
-      orderBy: { createdAt: "desc" },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const skip = (page - 1) * pageSize;
+
+    const [ruangLabs, total] = await Promise.all([
+      db.ruangLab.findMany({
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      db.ruangLab.count(),
+    ]);
+
+    return NextResponse.json({
+      data: ruangLabs,
+      total,
+      page,
+      pageSize,
     });
-    return NextResponse.json(ruangLabs);
   } catch (error) {
     console.error("Get ruang labs error:", error);
     return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });

@@ -41,12 +41,28 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const barangs = await db.barang.findMany({
-      orderBy: { createdAt: "desc" },
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const skip = (page - 1) * pageSize;
+
+    const [barangs, total] = await Promise.all([
+      db.barang.findMany({
+        orderBy: { createdAt: "desc" },
+        skip,
+        take: pageSize,
+      }),
+      db.barang.count(),
+    ]);
+
+    return NextResponse.json({
+      data: barangs,
+      total,
+      page,
+      pageSize,
     });
-    return NextResponse.json(barangs);
   } catch (error) {
     console.error("Get barangs error:", error);
     return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });

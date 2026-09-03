@@ -12,18 +12,23 @@ export const metadata: Metadata = {
 export default async function BarangPage() {
   const session = await requireAuth();
 
-  const barangs = await db.barang.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const [barangs, total] = await Promise.all([
+    db.barang.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    db.barang.count(),
+  ]);
 
   return (
     <AuthLayout userId={Number(session.userId)}>
       <BarangClient
-        barangs={barangs.map((b) => ({
+        initialBarangs={barangs.map((b) => ({
           id: Number(b.id),
           namaBarang: b.namaBarang,
           createdAt: b.createdAt?.toISOString() || "",
         }))}
+        initialTotal={total}
         userRole={session.role}
       />
     </AuthLayout>

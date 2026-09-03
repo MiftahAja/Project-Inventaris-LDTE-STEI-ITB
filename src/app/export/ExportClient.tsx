@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, FileSpreadsheet, Building2, ChevronDown } from "lucide-react";
-import * as XLSX from "xlsx";
+import { Download, FileSpreadsheet, Building2 } from "lucide-react";
 
 interface UnitBarang {
   id: number;
@@ -83,7 +82,7 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
     return rows;
   };
 
-  const createWorkbook = (data: Record<string, string | number>[], sheetName: string) => {
+  const createWorkbook = async (XLSX: any, data: Record<string, string | number>[], sheetName: string) => {
     const ws = XLSX.utils.json_to_sheet(data);
 
     // Set column widths
@@ -112,16 +111,17 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
       .replace(/\//g, "-");
   };
 
-  const handleExportPerLab = (lab: RuangLab) => {
+  const handleExportPerLab = async (lab: RuangLab) => {
     setLoading(true);
     try {
+      const XLSX = await import("xlsx");
       const data = getExportData(lab);
       if (data.length === 0) {
         alert("Tidak ada data untuk diexport");
         return;
       }
 
-      const wb = createWorkbook(data, lab.namaRuang);
+      const wb = await createWorkbook(XLSX, data, lab.namaRuang);
       const filename = `Export_${lab.namaRuang.replace(/\s+/g, "_")}_${getDateStr()}.xlsx`;
       XLSX.writeFile(wb, filename);
     } finally {
@@ -129,9 +129,10 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
     }
   };
 
-  const handleExportAll = () => {
+  const handleExportAll = async () => {
     setLoading(true);
     try {
+      const XLSX = await import("xlsx");
       const data = getExportData();
       if (data.length === 0) {
         alert("Tidak ada data untuk diexport");

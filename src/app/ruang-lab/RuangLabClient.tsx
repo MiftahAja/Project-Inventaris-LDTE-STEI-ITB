@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import DataTable from "@/components/DataTable";
 
 interface RuangLab {
@@ -11,13 +12,44 @@ interface RuangLab {
 }
 
 interface RuangLabClientProps {
-  ruangLabs: RuangLab[];
+  initialRuangLabs: RuangLab[];
+  initialTotal: number;
   userRole: string;
 }
 
-export default function RuangLabClient({ ruangLabs, userRole }: RuangLabClientProps) {
+export default function RuangLabClient({ initialRuangLabs, initialTotal, userRole }: RuangLabClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const isAdmin = userRole === "admin";
+
+  const [ruangLabs, setRuangLabs] = useState<RuangLab[]>(initialRuangLabs);
+  const [total, setTotal] = useState(initialTotal);
+  const [loading, setLoading] = useState(false);
+
+  const page = parseInt(searchParams.get("page") || "1");
+  const pageSize = 10;
+
+  const fetchData = useCallback(async (page: number) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/ruang-lab?page=${page}&pageSize=${pageSize}`);
+      const result = await response.json();
+      setRuangLabs(result.data);
+      setTotal(result.total);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData(page);
+  }, [page, fetchData]);
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/ruang-lab?page=${newPage}`);
+  };
 
   const handleEdit = (item: RuangLab) => {
     router.push(`/ruang-lab/edit/${item.id}`);
@@ -26,7 +58,7 @@ export default function RuangLabClient({ ruangLabs, userRole }: RuangLabClientPr
   const handleDelete = async (item: RuangLab) => {
     try {
       await fetch(`/api/ruang-lab/${item.id}`, { method: "DELETE" });
-      router.refresh();
+      fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -55,6 +87,11 @@ export default function RuangLabClient({ ruangLabs, userRole }: RuangLabClientPr
       searchKey="namaRuang"
       onEdit={isAdmin ? handleEdit : undefined}
       onDelete={isAdmin ? handleDelete : undefined}
+      // Pagination props
+      totalItems={total}
+      currentPage={page}
+      onPageChange={handlePageChange}
+      itemsPerPage={pageSize}
     />
   );
 }

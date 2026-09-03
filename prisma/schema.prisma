@@ -9,7 +9,6 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 // =============================================
@@ -33,8 +32,13 @@ model User {
   sessions          Session[]
   activityLogs      ActivityLog[]
 
+  @@index([createdAt], map: "idx_users_created_at")
   @@map("users")
 }
+
+// ... (skipping other models for brevity, providing the full file structure is required, but I will provide only the necessary changes for the specified models as per tool requirements, wait, the tool requires providing the *exact literal code*. I will have to provide the full file or at least enough context to be unambiguous. Given the file size, I will provide the updated blocks for each affected model.)
+
+// Re-thinking: The tool `replace` requires `old_string` and `new_string` to replace the exact block. I should do this per model.
 
 model PasswordResetToken {
   email     String   @id @db.VarChar(255)
@@ -148,6 +152,7 @@ model Barang {
   unitBarangs UnitBarang[]
 
   @@index([namaBarang], map: "idx_barangs_nama_barang")
+  @@index([createdAt], map: "idx_barangs_created_at")
   @@map("barangs")
 }
 
@@ -162,6 +167,7 @@ model RuangLab {
   unitBarangs   UnitBarang[]
   assignments   Assignment[]
 
+  @@index([createdAt], map: "idx_ruang_labs_created_at")
   @@map("ruang_labs")
 }
 
@@ -177,6 +183,7 @@ model Meja {
 
   @@unique([meja, ruangLabId])
   @@index([ruangLabId], map: "idx_mejas_ruang_lab_id")
+  @@index([createdAt], map: "idx_mejas_created_at")
   @@map("mejas")
 }
 

@@ -19,19 +19,37 @@ export default async function MejaPage() {
     where = { ruangLabId: { in: labIds } };
   }
 
-  const mejas = await db.meja.findMany({
-    where,
-    include: { ruangLab: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [mejas, total] = await Promise.all([
+    db.meja.findMany({
+      where,
+      select: {
+        id: true,
+        meja: true,
+        ruangLabId: true,
+        ruangLab: { select: { namaRuang: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
+    db.meja.count({ where }),
+  ]);
 
-  const ruangLabs = await db.ruangLab.findMany();
+  const ruangLabs = await db.ruangLab.findMany({
+    select: { id: true, namaRuang: true }
+  });
 
   // Fetch unit barang for each meja
   const mejaIds = mejas.map((m) => m.id);
   const unitBarangs = await db.unitBarang.findMany({
     where: { mejaId: { in: mejaIds } },
-    include: { barang: true },
+    select: {
+      id: true,
+      kodeBarang: true,
+      kondisiBarang: true,
+      status: true,
+      mejaId: true,
+      barang: { select: { namaBarang: true } }
+    }
   });
 
   // Group unit barang by mejaId
@@ -58,17 +76,14 @@ export default async function MejaPage() {
   return (
     <AuthLayout userId={Number(session.userId)}>
       <MejaClient
-        mejas={mejas.map((m) => ({
+        initialMejas={mejas.map((m) => ({
           id: Number(m.id),
           meja: m.meja,
           ruangLab: m.ruangLab.namaRuang,
           ruangLabId: Number(m.ruangLabId),
           barangCount: (unitBarangByMeja[Number(m.id)] || []).length,
         }))}
-        ruangLabs={ruangLabs.map((rl) => ({
-          id: Number(rl.id),
-          namaRuang: rl.namaRuang,
-        }))}
+        initialTotal={total}
         unitBarangByMeja={unitBarangByMeja}
         userRole={session.role}
         assignedLabIds={assignedLabIds}
