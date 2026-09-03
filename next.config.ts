@@ -1,12 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable standalone output for Docker production deployment
-  // This removes node_modules from the production build
-  output: "standalone",
+  // NOTE: Do NOT use output: "standalone" on Vercel
+  // Vercel has its own build system and doesn't need it
+  // Only use standalone for Docker deployment
 
   // External packages that should not be bundled
-  // These are loaded at runtime from node_modules
   serverExternalPackages: [
     "@prisma/client",
     "bcryptjs",
