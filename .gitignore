@@ -44,6 +44,7 @@ yarn-error.log*
 
 # 
 DESKRIPSI.md
+DEPLOYMENT.md
 
 # typescript
 *.tsbuildinfo

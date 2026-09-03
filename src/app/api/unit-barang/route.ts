@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, canWriteToLab } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logActivity } from "@/lib/activity-log";
+import {
+  getOrSetCache,
+  invalidateEntityCache,
+  buildCacheKey,
+  CACHE_TTL,
+  CACHE_KEYS,
+} from "@/lib/cache";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +34,7 @@ export async function POST(req: NextRequest) {
         kodeBarang,
         ruangLabId: ruangLabId ? BigInt(ruangLabId) : null,
       },
+      select: { id: true },
     });
 
     if (existingKode) {
@@ -45,9 +53,25 @@ export async function POST(req: NextRequest) {
         ruangLabId: ruangLabId ? BigInt(ruangLabId) : null,
         mejaId: mejaId ? BigInt(mejaId) : null,
       },
+      select: {
+        id: true,
+        kodeBarang: true,
+        kondisiBarang: true,
+        status: true,
+        createdAt: true,
+      },
     });
 
-    await logActivity({
+    // Invalidate unit-barang and related caches after mutation
+    await Promise.all([
+      invalidateEntityCache(CACHE_KEYS.UNIT_BARANG),
+      invalidateEntityCache(CACHE_KEYS.RUANG_LAB),
+      invalidateEntityCache(CACHE_KEYS.MEJA),
+      invalidateEntityCache(CACHE_KEYS.DASHBOARD),
+    ]);
+
+    // Fire and forget activity log
+    logActivity({
       logName: "unit_barang",
       description: `Menambahkan unit barang: ${kodeBarang}`,
       subjectType: "UnitBarang",
@@ -60,5 +84,69 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Create unit barang error:", error);
     return NextResponse.json({ error: "Gagal membuat unit barang" }, { status: 500 });
+  }
+}
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "10"), 100);
+    const skip = (page - 1) * pageSize;
+
+    // Build cache key based on query parameters
+    const cacheKey = buildCacheKey(CACHE_KEYS.UNIT_BARANG, { page, pageSize });
+
+    const data = await getOrSetCache(
+      cacheKey,
+      async () => {
+        const [unitBarangs, total] = await Promise.all([
+          db.unitBarang.findMany({
+            orderBy: { createdAt: "desc" },
+            skip,
+            take: pageSize,
+            include: {
+              barang: { select: { id: true, namaBarang: true } },
+              ruangLab: { select: { id: true, namaRuang: true } },
+              meja: { select: { id: true, meja: true } },
+            },
+          }),
+          db.unitBarang.count(),
+        ]);
+
+        return {
+          data: unitBarangs.map((ub) => ({
+            id: Number(ub.id),
+            kodeBarang: ub.kodeBarang,
+            kondisiBarang: ub.kondisiBarang,
+            status: ub.status,
+            barangId: Number(ub.barangId),
+            namaBarang: ub.barang.namaBarang,
+            ruangLabId: ub.ruangLabId ? Number(ub.ruangLabId) : null,
+            namaRuang: ub.ruangLab?.namaRuang || "-",
+            mejaId: ub.mejaId ? Number(ub.mejaId) : null,
+            namaMeja: ub.meja?.meja || "-",
+            createdAt: ub.createdAt,
+          })),
+          total,
+          page,
+          pageSize,
+        };
+      },
+      CACHE_TTL.SHORT // 30 seconds cache
+    );
+
+    const response = NextResponse.json(data);
+
+    // Set cache headers
+    response.headers.set(
+      "Cache-Control",
+      "private, max-age=30, stale-while-revalidate=60"
+    );
+
+    return response;
+  } catch (error) {
+    console.error("Get unit barangs error:", error);
+    return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });
   }
 }

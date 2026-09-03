@@ -1,0 +1,42 @@
+services:
+  # =============================================
+  # Next.js Web Service
+  # =============================================
+  - type: web
+    name: inventaris-ldte
+    runtime: docker
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inventaris-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: REDIS_URL
+        fromService:
+          name: inventaris-redis
+          property: connectionString
+    healthCheckPath: /
+    autoDeploy: true
+    plan: free
+
+  # =============================================
+  # PostgreSQL Database
+  # =============================================
+  - type: postgres
+    name: inventaris-db
+    plan: free
+    databaseName: inventaris_ldte
+    ipAllowList: []
+
+  # =============================================
+  # Redis Cache
+  # =============================================
+  - type: redis
+    name: inventaris-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: allkeys-lru

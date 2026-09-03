@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logActivity } from "@/lib/activity-log";
+import {
+  getOrSetCache,
+  invalidateEntityCache,
+  CACHE_TTL,
+  CACHE_KEYS,
+} from "@/lib/cache";
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,12 +33,32 @@ export async function POST(req: NextRequest) {
         isActive: true,
         assignedBy: Number(session.userId),
       },
+      select: {
+        id: true,
+        userId: true,
+        ruangLabId: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
 
-    const user = await db.user.findUnique({ where: { id: BigInt(userId) } });
-    const lab = await db.ruangLab.findUnique({ where: { id: BigInt(ruangLabId) } });
+    // Invalidate assignments cache after mutation
+    await invalidateEntityCache(CACHE_KEYS.ASSIGNMENTS);
 
-    await logActivity({
+    // Get user and lab info for logging
+    const [user, lab] = await Promise.all([
+      db.user.findUnique({
+        where: { id: BigInt(userId) },
+        select: { name: true },
+      }),
+      db.ruangLab.findUnique({
+        where: { id: BigInt(ruangLabId) },
+        select: { namaRuang: true },
+      }),
+    ]);
+
+    // Fire and forget activity log
+    logActivity({
       logName: "assignment",
       description: `Menugaskan ${user?.name} ke ${lab?.namaRuang}`,
       subjectType: "Assignment",
@@ -50,11 +76,35 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
-    const assignments = await db.assignment.findMany({
-      include: { user: true, ruangLab: true },
-      orderBy: { createdAt: "desc" },
-    });
-    return NextResponse.json(assignments);
+    // Use cache-aside pattern
+    const data = await getOrSetCache(
+      CACHE_KEYS.ASSIGNMENTS,
+      async () => {
+        return db.assignment.findMany({
+          select: {
+            id: true,
+            userId: true,
+            ruangLabId: true,
+            isActive: true,
+            createdAt: true,
+            user: { select: { id: true, name: true, email: true } },
+            ruangLab: { select: { id: true, namaRuang: true } },
+          },
+          orderBy: { createdAt: "desc" },
+        });
+      },
+      CACHE_TTL.SHORT // 30 seconds cache
+    );
+
+    const response = NextResponse.json(data);
+
+    // Set cache headers
+    response.headers.set(
+      "Cache-Control",
+      "private, max-age=30, stale-while-revalidate=60"
+    );
+
+    return response;
   } catch (error) {
     console.error("Get assignments error:", error);
     return NextResponse.json({ error: "Gagal mengambil data" }, { status: 500 });

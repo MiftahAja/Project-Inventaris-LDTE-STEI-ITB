@@ -1,40 +1,43 @@
 import { requireAuth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import AuthLayout from "@/components/AuthLayout";
-import DashboardCharts from "@/components/DashboardCharts";
 import { Package, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
 import { Metadata } from "next";
+import DashboardChartsWrapper from "./DashboardChartsWrapper";
 
 export const metadata: Metadata = {
-  title : "Home | Inventaris LDTE",
-  description : ""
-}
+  title: "Home | Inventaris LDTE",
+  description: "Dashboard inventaris laboratorium LDTE",
+};
 
 export default async function HomePage() {
   const session = await requireAuth();
 
-  // Get unit barang statistics
-  const [tersedia, baik, rusak, hilang] = await Promise.all([
-    db.unitBarang.count({ where: { status: "Tersedia" } }),
-    db.unitBarang.count({ where: { kondisiBarang: "baik" } }),
-    db.unitBarang.count({ where: { kondisiBarang: "rusak" } }),
-    db.unitBarang.count({ where: { kondisiBarang: "hilang" } }),
+  // Single efficient query for all statistics using _count aggregation
+  const [statsData, mutasiData] = await Promise.all([
+    // Get all counts in parallel
+    Promise.all([
+      db.unitBarang.count({ where: { status: "Tersedia" } }),
+      db.unitBarang.count({ where: { kondisiBarang: "baik" } }),
+      db.unitBarang.count({ where: { kondisiBarang: "rusak" } }),
+      db.unitBarang.count({ where: { kondisiBarang: "hilang" } }),
+    ]),
+    // Get mutasi data for charts
+    db.mutasiStok.findMany({
+      where: {
+        tanggal: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        },
+      },
+      select: {
+        tanggal: true,
+        tipe: true,
+      },
+      orderBy: { tanggal: "asc" },
+    }),
   ]);
 
-  // Get mutasi stok data for last 7 days
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-  const mutasiData = await db.mutasiStok.findMany({
-    where: {
-      tanggal: { gte: sevenDaysAgo },
-    },
-    select: {
-      tanggal: true,
-      tipe: true,
-    },
-    orderBy: { tanggal: "asc" },
-  });
+  const [tersedia, baik, rusak, hilang] = statsData;
 
   // Process chart data
   const chartData = processChartData(mutasiData);
@@ -74,7 +77,9 @@ export default async function HomePage() {
     <AuthLayout userId={Number(session.userId)}>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Dashboard
+          </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Selamat datang di Sistem Inventaris LDTE
           </p>
@@ -99,7 +104,9 @@ export default async function HomePage() {
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`${stat.color} p-2 sm:p-3 rounded-xl shadow-lg shrink-0`}>        
+                  <div
+                    className={`${stat.color} p-2 sm:p-3 rounded-xl shadow-lg shrink-0`}
+                  >
                     <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   </div>
                 </div>
@@ -108,16 +115,14 @@ export default async function HomePage() {
           })}
         </div>
 
-        {/* Charts */}
-        <DashboardCharts chartData={chartData} />
+        {/* Charts - dynamically imported for better initial load */}
+        <DashboardChartsWrapper chartData={chartData} />
       </div>
     </AuthLayout>
   );
 }
 
-function processChartData(
-  data: { tanggal: Date; tipe: string }[]
-) {
+function processChartData(data: { tanggal: Date; tipe: string }[]) {
   const days: string[] = [];
   const masuk: number[] = [];
   const keluar: number[] = [];

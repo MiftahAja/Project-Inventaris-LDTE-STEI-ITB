@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { decrypt } from "@/lib/session";
 
 // Routes that don't require authentication
-const publicRoutes = ["/login", "/register", "/"];
+const publicRoutes = new Set(["/login", "/register", "/"]);
 
 // Routes that are read-only public (barang, unit-barang, ruang-lab, meja index)
-const readOnlyPublicRoutes = ["/barang", "/unit-barang", "/ruang-lab", "/meja"];
+const readOnlyPublicRoutes = new Set(["/barang", "/unit-barang", "/ruang-lab", "/meja"]);
+
+// Static file prefixes to skip
+const STATIC_PREFIXES = ["/_next", "/api", "/favicon.ico"];
+const STATIC_EXTENSIONS = [".ico", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".css", ".js", ".woff", ".woff2"];
 
 export default async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
-  // Skip static files and API routes
+  // Fast path: skip static files and API routes
   if (
     path.startsWith("/_next") ||
     path.startsWith("/api") ||
@@ -19,8 +23,8 @@ export default async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check if route is public
-  const isPublicRoute = publicRoutes.includes(path);
+  // Check if route is public (fast Set lookup)
+  const isPublicRoute = publicRoutes.has(path);
 
   // Decrypt session from cookie
   const cookie = req.cookies.get("session")?.value;
@@ -28,11 +32,8 @@ export default async function middleware(req: NextRequest) {
 
   // Redirect to login if not authenticated and accessing protected route
   if (!session && !isPublicRoute) {
-    // Allow read-only public routes without auth
-    const isReadOnly = readOnlyPublicRoutes.some(
-      (route) => path === route || path === route + "/"
-    );
-    if (!isReadOnly) {
+    // Allow read-only public routes without auth (fast Set lookup)
+    if (!readOnlyPublicRoutes.has(path)) {
       return NextResponse.redirect(new URL("/login", req.nextUrl));
     }
   }
@@ -44,10 +45,9 @@ export default async function middleware(req: NextRequest) {
 
   // Redirect root to login or home based on auth
   if (path === "/") {
-    if (session) {
-      return NextResponse.redirect(new URL("/home", req.nextUrl));
-    }
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+    return NextResponse.redirect(
+      new URL(session ? "/home" : "/login", req.nextUrl)
+    );
   }
 
   return NextResponse.next();
