@@ -3,18 +3,21 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import Aurora from "@/components/Aurora";
-import Image from "next/image";
 
-export default function LoginClient() {
+export default function RegisterPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,11 +25,13 @@ export default function LoginClient() {
     setLoading(true);
 
     const formData = new FormData();
+    formData.append("name", name);
     formData.append("email", email);
     formData.append("password", password);
+    formData.append("confirmPassword", confirmPassword);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         body: formData,
       });
@@ -42,7 +47,6 @@ export default function LoginClient() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Aurora Animation */}
-      <title>Login | Inventaris LDTE</title>
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-950">
         {/* Aurora Effect */}
         <div className="absolute inset-0 z-0">
@@ -58,24 +62,24 @@ export default function LoginClient() {
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
-            <Image
-              src="/logo.svg"
-              alt="Logo LDTE"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+           <Image
+                src="/logo.svg"
+                alt="Logo LDTE"
+                width={40}
+                height={40}
+                className="w-10 h-10"
             />
             <span className="text-xl font-bold">Inventaris LDTE</span>
           </div>
 
-          <h2 className="text-3xl font-bold mb-2">Nice to see you again</h2>
+          <h2 className="text-3xl font-bold mb-2">Create your account</h2>
           <h1 className="text-5xl font-extrabold mb-4 tracking-tight">
-            WELCOME BACK
+            GET STARTED
           </h1>
           <div className="w-16 h-1 bg-white rounded-full mb-6" />
           <p className="text-white/80 text-sm leading-relaxed max-w-md">
-            Akses sistem manajemen inventaris laboratorium untuk mengelola
-            barang, unit, dan ruang lab dengan mudah dan efisien.
+            Bergabung dengan sistem manajemen inventaris laboratorium untuk
+            mengelola aset dengan lebih mudah dan terorganisir.
           </p>
         </div>
       </div>
@@ -86,11 +90,11 @@ export default function LoginClient() {
           {/* Mobile Logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
             <Image
-              src="/logo.svg"
-              alt="Logo LDTE"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+                src="/logo.svg"
+                alt="Logo LDTE"
+                width={40}
+                height={40}
+                className="w-10 h-10"
             />
             <span className="text-xl font-bold text-gray-900 dark:text-white">
               Inventaris LDTE
@@ -100,21 +104,34 @@ export default function LoginClient() {
           {/* Form Card */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-shadow-white text-white mb-2">
-                Login Account
+              <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                Create Account
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Masuk ke akun Anda untuk mengakses sistem inventaris
+                Buat akun baru untuk mengakses sistem inventaris
               </p>
             </div>
 
             {error && (
               <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {error}
+                </p>
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-gray-400"
+                  placeholder="Username"
+                />
+              </div>
+
               <div>
                 <input
                   type="email"
@@ -150,22 +167,30 @@ export default function LoginClient() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer group">
+              <div>
+                <div className="relative">
                   <input
-                    type="checkbox"
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all placeholder:text-gray-400"
+                    placeholder="Konfirmasi Password"
                   />
-                  <span className="text-sm text-gray-600 dark:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 transition-colors">
-                    Ingat saya
-                  </span>
-                </label>
-                <Link
-                  href="/register"
-                  className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
-                >
-                  Already a member?
-                </Link>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmPassword(!showConfirmPassword)
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <button
@@ -177,12 +202,24 @@ export default function LoginClient() {
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    MASUK
+                    DAFTAR
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Sudah punya akun?{" "}
+                <Link
+                  href="/login"
+                  className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
+                >
+                  Masuk
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>
