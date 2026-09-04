@@ -11,7 +11,7 @@ const readOnlyPublicRoutes = new Set(["/barang", "/unit-barang", "/ruang-lab", "
 const STATIC_PREFIXES = ["/_next", "/api", "/favicon.ico"];
 const STATIC_EXTENSIONS = [".ico", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".css", ".js", ".woff", ".woff2"];
 
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
   // Fast path: skip static files and API routes

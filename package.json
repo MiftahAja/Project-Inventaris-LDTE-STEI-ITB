@@ -2,6 +2,7 @@
   "name": "project-inventaris-ldte",
   "version": "0.1.0",
   "private": true,
+  "region": ["sin1"],
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
