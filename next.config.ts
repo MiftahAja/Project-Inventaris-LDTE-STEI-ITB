@@ -12,6 +12,15 @@ const nextConfig: NextConfig = {
     "ioredis",
   ],
 
+  // Experimental optimizations
+  experimental: {
+    // Automatically optimize imports for tree-shaking (reduces bundle size)
+    optimizePackageImports: [
+      "lucide-react",
+      "date-fns",
+    ],
+  },
+
   // Image optimization
   images: {
     formats: ["image/avif", "image/webp"],

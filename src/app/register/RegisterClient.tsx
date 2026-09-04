@@ -5,7 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import Aurora from "@/components/Aurora";
+import dynamic from "next/dynamic";
+
+// Lazy-load Aurora WebGL animation (~heavy) - not needed for initial paint
+const Aurora = dynamic(() => import("@/components/Aurora"), { ssr: false });
 
 export default function RegisterPage() {
   const router = useRouter();
