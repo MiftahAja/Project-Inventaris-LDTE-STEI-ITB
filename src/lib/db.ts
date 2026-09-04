@@ -1,3 +1,4 @@
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 // Optimize BigInt serialization for JSON responses
@@ -5,20 +6,23 @@ import { PrismaClient } from "@prisma/client";
   return Number(this);
 };
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
+
+// Create Prisma client with pg adapter for serverless Postgres compatibility
+function createPrismaClient() {
+  const adapter = new PrismaPg({ connectionString });
+  return new PrismaClient({
+    adapter,
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+  });
+}
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
-
-// Create Prisma client with optimized settings
-function createPrismaClient() {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-    // Connection pool is managed by Prisma automatically
-    // For PostgreSQL, Prisma uses pgBouncer-compatible pooling
-    // The connection pool size can be tuned via DATABASE_URL parameters:
-    // e.g., postgresql://...?connection_limit=20&pool_timeout=20
-  });
-}
 
 export const db = globalForPrisma.prisma ?? createPrismaClient();
 

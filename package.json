@@ -2,7 +2,6 @@
   "name": "project-inventaris-ldte",
   "version": "0.1.0",
   "private": true,
-  "region": ["sin1"],
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -25,17 +24,18 @@
     "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^6.19.3",
-    "@supabase/ssr": "^0.12.5",
-    "@supabase/supabase-js": "^2.112.4",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "dotenv": "^17.4.2",
     "ioredis": "^6.0.0",
     "jose": "^6.2.10",
     "lucide-react": "^1.39.0",
     "next": "16.3.4",
     "ogl": "^1.0.11",
+    "pg": "^8.23.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
@@ -46,6 +46,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
