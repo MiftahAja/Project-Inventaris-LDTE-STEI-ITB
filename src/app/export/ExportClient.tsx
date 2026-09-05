@@ -26,21 +26,28 @@ interface RuangLab {
 
 interface ExportClientProps {
   ruangLabs: RuangLab[];
+  userRole: string;
+  assignedLabIds: number[];
 }
 
-export default function ExportClient({ ruangLabs }: ExportClientProps) {
+export default function ExportClient({ ruangLabs, userRole, assignedLabIds }: ExportClientProps) {
+  const isAdmin = userRole === "admin";
+  const canExport = isAdmin || assignedLabIds.length > 0;
+
+  const visibleLabs = isAdmin
+    ? ruangLabs
+    : ruangLabs.filter((lab) => assignedLabIds.includes(lab.id));
   const [selectedLab, setSelectedLab] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
 
   const getExportData = (lab?: RuangLab) => {
-    const labs = lab ? [lab] : ruangLabs;
+    const labs = lab ? [lab] : visibleLabs;
     const rows: Record<string, string | number>[] = [];
     let no = 1;
 
     for (const l of labs) {
       for (const meja of l.mejas) {
         if (meja.unitBarangs.length === 0) {
-          // Meja kosong - tetap tampilkan
           rows.push({
             No: no++,
             "Ruang Lab": l.namaRuang,
@@ -64,25 +71,12 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
           }
         }
       }
-
-      // Jika lab tidak ada meja sama sekali
-      if (l.mejas.length === 0) {
-        rows.push({
-          No: no++,
-          "Ruang Lab": l.namaRuang,
-          Meja: "-",
-          "Kode Barang": "-",
-          "Nama Barang": "-",
-          Kondisi: "-",
-          Status: "-",
-        });
-      }
     }
 
     return rows;
   };
 
-  const createWorkbook = async (XLSX: any, data: Record<string, string | number>[], sheetName: string) => {
+  const createWorkbook = async (XLSX: { utils: { json_to_sheet: (data: Record<string, string | number>[]) => any; book_new: () => any; book_append_sheet: (wb: any, ws: any, name: string) => void }; writeFile: (wb: any, name: string) => void }, data: Record<string, string | number>[], sheetName: string) => {
     const ws = XLSX.utils.json_to_sheet(data);
 
     // Set column widths
@@ -114,12 +108,23 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
   const handleExportPerLab = async (lab: RuangLab) => {
     setLoading(true);
     try {
-      const XLSX = await import("xlsx");
-      const data = getExportData(lab);
-      if (data.length === 0) {
+      // Fetch data per lab dari server (lebih efisien, tidak perlu load semua)
+      const res = await fetch(`/api/export-data?labId=${lab.id}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || "Gagal mengambil data lab");
+        return;
+      }
+      const json = await res.json();
+      const labData = json.data?.[0];
+      if (!labData || labData.mejas.length === 0) {
         alert("Tidak ada data untuk diexport");
         return;
       }
+
+      const XLSX = await import("xlsx");
+      const data = getExportData(labData);
+      console.log("[EXPORT] per lab (dari server)", { labId: lab.id, labNama: lab.namaRuang, rowCount: data.length, sample: data[0] });
 
       const wb = await createWorkbook(XLSX, data, lab.namaRuang);
       const filename = `Export_${lab.namaRuang.replace(/\s+/g, "_")}_${getDateStr()}.xlsx`;
@@ -132,54 +137,43 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
   const handleExportAll = async () => {
     setLoading(true);
     try {
-      const XLSX = await import("xlsx");
-      const data = getExportData();
-      if (data.length === 0) {
+      const res = await fetch(`/api/export-data`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.error || "Gagal mengambil data lab");
+        return;
+      }
+      const json = await res.json();
+      const allLabsData = json.data || [];
+      
+      if (allLabsData.length === 0) {
         alert("Tidak ada data untuk diexport");
         return;
       }
 
+      const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
 
       // Create a sheet per lab
-      for (const lab of ruangLabs) {
+      for (const lab of allLabsData) {
         const labData = getExportData(lab);
+        if (labData.length === 0) continue;
         const sheetName = lab.namaRuang.substring(0, 31); // Excel max 31 chars
         const ws = XLSX.utils.json_to_sheet(labData);
         ws["!cols"] = [
-          { wch: 5 },
-          { wch: 25 },
-          { wch: 12 },
-          { wch: 15 },
-          { wch: 25 },
-          { wch: 12 },
-          { wch: 12 },
+          { wch: 5 }, { wch: 25 }, { wch: 12 }, { wch: 15 },
+          { wch: 25 }, { wch: 12 }, { wch: 12 },
         ];
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
       }
 
       // Summary sheet
-      const summaryData = ruangLabs.map((lab) => {
+      const summaryData = allLabsData.map((lab: RuangLab) => {
         const totalMeja = lab.mejas.length;
-        const totalBarang = lab.mejas.reduce(
-          (acc, m) => acc + m.unitBarangs.length,
-          0
-        );
-        const baik = lab.mejas.reduce(
-          (acc, m) =>
-            acc + m.unitBarangs.filter((ub) => ub.kondisiBarang === "baik").length,
-          0
-        );
-        const rusak = lab.mejas.reduce(
-          (acc, m) =>
-            acc + m.unitBarangs.filter((ub) => ub.kondisiBarang === "rusak").length,
-          0
-        );
-        const hilang = lab.mejas.reduce(
-          (acc, m) =>
-            acc + m.unitBarangs.filter((ub) => ub.kondisiBarang === "hilang").length,
-          0
-        );
+        const totalBarang = lab.mejas.reduce((acc, m) => acc + m.unitBarangs.length, 0);
+        const baik = lab.mejas.reduce((acc, m) => acc + m.unitBarangs.filter((ub) => ub.kondisiBarang === "baik").length, 0);
+        const rusak = lab.mejas.reduce((acc, m) => acc + m.unitBarangs.filter((ub) => ub.kondisiBarang === "rusak").length, 0);
+        const hilang = lab.mejas.reduce((acc, m) => acc + m.unitBarangs.filter((ub) => ub.kondisiBarang === "hilang").length, 0);
 
         return {
           "Ruang Lab": lab.namaRuang,
@@ -193,12 +187,8 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
 
       const summaryWs = XLSX.utils.json_to_sheet(summaryData);
       summaryWs["!cols"] = [
-        { wch: 25 },
-        { wch: 12 },
-        { wch: 14 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
+        { wch: 25 }, { wch: 12 }, { wch: 14 },
+        { wch: 10 }, { wch: 10 }, { wch: 10 },
       ];
       XLSX.utils.book_append_sheet(wb, summaryWs, "Ringkasan");
 
@@ -248,7 +238,7 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
             </li>
             <li className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-              Sheet "Ringkasan" berisi statistik per lab
+              Sheet &quot;Ringkasan&quot; berisi statistik per lab
             </li>
           </ul>
         </div>
@@ -282,12 +272,6 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
         {/* Lab Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {ruangLabs.map((lab) => {
-            const totalMeja = lab.mejas.length;
-            const totalBarang = lab.mejas.reduce(
-              (acc, m) => acc + m.unitBarangs.length,
-              0
-            );
-
             return (
               <div
                 key={lab.id}
@@ -306,16 +290,8 @@ export default function ExportClient({ ruangLabs }: ExportClientProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 mb-3 text-xs text-gray-500 dark:text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-blue-500 rounded-full" />
-                    {totalMeja} meja
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                    {totalBarang} barang
-                  </span>
-                </div>
+                {/* Removed pre-computed stats as mejas data is not available */}
+                <div className="mb-3" />
 
                 <button
                   onClick={() => handleExportPerLab(lab)}

@@ -7,11 +7,6 @@ async function main() {
 
   const result = await prisma.$transaction([
     // Transaksi & peminjaman (depend pada unit_barangs)
-    prisma.suratKeteranganPraktikum.deleteMany(),
-    prisma.peminjamanPeralatan.deleteMany(),
-    prisma.peminjaman.deleteMany(),
-    prisma.barangMasuk.deleteMany(),
-    prisma.barangKeluar.deleteMany(),
     prisma.mutasiStok.deleteMany(),
 
     // Inventaris
@@ -29,15 +24,11 @@ async function main() {
     // Master data
     prisma.barang.deleteMany(),
     prisma.ruangLab.deleteMany(),
-    prisma.mataKuliah.deleteMany(),
-    prisma.programStudi.deleteMany(),
-    prisma.fakultas.deleteMany(),
 
     // Lain-lain
     prisma.passwordResetToken.deleteMany(),
     prisma.cache.deleteMany(),
     prisma.cacheLock.deleteMany(),
-    prisma.globalConfig.deleteMany(),
 
     // User selain admin
     prisma.user.deleteMany({ where: { role: { not: "admin" } } }),

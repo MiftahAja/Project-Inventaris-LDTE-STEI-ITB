@@ -11,15 +11,17 @@ export default function MejaEditPage() {
   const { user } = useAuth();
   const [initialData, setInitialData] = useState<{ id: number; meja: string; ruangLabId: number } | undefined>(undefined);
   const [ruangLabs, setRuangLabs] = useState<{ id: number; namaRuang: string }[]>([]);
+  const [assignedLabIds, setAssignedLabIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [mejaRes, ruangLabRes] = await Promise.all([
+        const [mejaRes, ruangLabRes, assignedLabsRes] = await Promise.all([
           fetch(`/api/meja?page=1&pageSize=100`),
           fetch(`/api/ruang-lab?page=1&pageSize=100`),
+          fetch("/api/auth/assigned-labs"),
         ]);
         const mejaData = await mejaRes.json();
         const ruangLabData = await ruangLabRes.json();
@@ -35,6 +37,9 @@ export default function MejaEditPage() {
           id: Number(rl.id),
           namaRuang: rl.namaRuang,
         })));
+
+        const assignedLabsData = await assignedLabsRes.json();
+        setAssignedLabIds(assignedLabsData.labIds || []);
       } catch {
         setNotFound(true);
       } finally {
@@ -69,7 +74,7 @@ export default function MejaEditPage() {
       <MejaForm
         initialData={initialData}
         ruangLabs={ruangLabs}
-        assignedLabIds={[]}
+        assignedLabIds={assignedLabIds}
         userRole={user?.role || ""}
       />
     </AuthLayout>

@@ -10,17 +10,20 @@ export default function MejaPage() {
   const [mejas, setMejas] = useState<{ id: number; meja: string; ruangLab: string; ruangLabId: number; barangCount: number }[]>([]);
   const [total, setTotal] = useState(0);
   const [unitBarangByMeja, setUnitBarangByMeja] = useState<Record<number, { id: number; kodeBarang: string; namaBarang: string; kondisiBarang: string; status: string }[]>>({});
+  const [assignedLabIds, setAssignedLabIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [mejaRes, ruangLabRes] = await Promise.all([
+        const [mejaRes, ruangLabRes, assignedLabsRes] = await Promise.all([
           fetch("/api/meja?page=1&pageSize=10"),
           fetch("/api/ruang-lab?page=1&pageSize=100"),
+          fetch("/api/auth/assigned-labs"),
         ]);
         const mejaData = await mejaRes.json();
         const ruangLabData = await ruangLabRes.json();
+        const assignedLabsData = await assignedLabsRes.json();
 
         setMejas(mejaData.data.map((m: { id: number; meja: string; ruangLab: string; ruangLabId: number; barangCount: number }) => ({
           id: Number(m.id),
@@ -30,6 +33,7 @@ export default function MejaPage() {
           barangCount: m.barangCount || 0,
         })));
         setTotal(mejaData.total);
+        setAssignedLabIds(assignedLabsData.labIds || []);
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -56,7 +60,7 @@ export default function MejaPage() {
         initialTotal={total}
         unitBarangByMeja={unitBarangByMeja}
         userRole={user?.role || ""}
-        assignedLabIds={[]}
+        assignedLabIds={assignedLabIds}
       />
     </AuthLayout>
   );

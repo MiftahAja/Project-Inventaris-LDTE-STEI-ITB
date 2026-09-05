@@ -14,9 +14,21 @@ interface ActivityLog {
 
 interface ActivityLogClientProps {
   logs: ActivityLog[];
+  totalItems: number;
+  currentPage: number;
+  onPageChange: (page: number) => void;
+  itemsPerPage: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
 }
 
-export default function ActivityLogClient({ logs }: ActivityLogClientProps) {
+export default function ActivityLogClient({ logs, totalItems, currentPage, onPageChange, itemsPerPage }: ActivityLogClientProps) {
+  console.log("[ACT] client props", { totalItems, currentPage, itemsPerPage, logsLen: logs?.length });
+
+  if (!onPageChange) {
+    console.warn("[ACT] onPageChange belum ada");
+  }
+
   return (
     <DataTable
       data={logs}
@@ -48,7 +60,12 @@ export default function ActivityLogClient({ logs }: ActivityLogClientProps) {
       ]}
       title="Activity Log"
       showActions={false}
-      itemsPerPage={20}
+      itemsPerPage={itemsPerPage}
+      totalItems={totalItems}
+      currentPage={currentPage}
+      onPageChange={onPageChange}
+      pageSizeOptions={[10, 20, 50, 100]}
+      onPageSizeChange={(size) => onPageChange?.(1)}
     />
   );
 }

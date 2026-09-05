@@ -107,7 +107,10 @@ export async function GET(req: NextRequest) {
         const [mejas, total] = await Promise.all([
           db.meja.findMany({
             where,
-            include: { ruangLab: { select: { id: true, namaRuang: true } } },
+            include: {
+              ruangLab: { select: { id: true, namaRuang: true } },
+              _count: { select: { unitBarangs: true } },
+            },
             orderBy: { createdAt: "desc" },
             skip,
             take: pageSize,
@@ -121,6 +124,7 @@ export async function GET(req: NextRequest) {
             meja: m.meja,
             ruangLabId: Number(m.ruangLabId),
             ruangLab: m.ruangLab.namaRuang,
+            barangCount: m._count.unitBarangs,
             createdAt: m.createdAt,
           })),
           total,

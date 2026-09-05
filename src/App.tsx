@@ -88,8 +88,8 @@ function AppRoutes() {
       <Route path="/ruang-lab/create" element={<ProtectedRoute adminOnly><RuangLabCreatePage /></ProtectedRoute>} />
       <Route path="/ruang-lab/edit/:id" element={<ProtectedRoute adminOnly><RuangLabEditPage /></ProtectedRoute>} />
       <Route path="/meja" element={<ProtectedRoute><MejaPage /></ProtectedRoute>} />
-      <Route path="/meja/create" element={<ProtectedRoute adminOnly><MejaCreatePage /></ProtectedRoute>} />
-      <Route path="/meja/edit/:id" element={<ProtectedRoute adminOnly><MejaEditPage /></ProtectedRoute>} />
+      <Route path="/meja/create" element={<ProtectedRoute><MejaCreatePage /></ProtectedRoute>} />
+      <Route path="/meja/edit/:id" element={<ProtectedRoute><MejaEditPage /></ProtectedRoute>} />
       <Route path="/unit-barang" element={<ProtectedRoute><UnitBarangPage /></ProtectedRoute>} />
       <Route path="/unit-barang/create" element={<ProtectedRoute><UnitBarangCreatePage /></ProtectedRoute>} />
       <Route path="/unit-barang/edit/:id" element={<ProtectedRoute><UnitBarangEditPage /></ProtectedRoute>} />

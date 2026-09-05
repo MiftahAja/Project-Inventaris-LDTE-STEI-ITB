@@ -38,6 +38,12 @@ interface UnitBarangClientProps {
   mejas: Meja[];
   userRole: string;
   assignedLabIds: number[];
+  totalItems?: number;
+  currentPage?: number;
+  onPageChange?: (page: number) => void;
+  itemsPerPage?: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
 }
 
 export default function UnitBarangClient({
@@ -46,6 +52,12 @@ export default function UnitBarangClient({
   mejas,
   userRole,
   assignedLabIds,
+  totalItems,
+  currentPage,
+  onPageChange,
+  itemsPerPage,
+  pageSizeOptions,
+  onPageSizeChange,
 }: UnitBarangClientProps) {
   const navigate = useNavigate();
   const canWrite = userRole === "admin" || assignedLabIds.length > 0;
@@ -66,7 +78,7 @@ export default function UnitBarangClient({
     return true;
   });
 
-  const handleEdit = (item: UnitBarang) => {
+  const handleEdit = (item: UnitBarang) => { 
     navigate(`/unit-barang/edit/${item.id}`);
   };
 
@@ -203,6 +215,12 @@ export default function UnitBarangClient({
         searchKey="kodeBarang"
         onEdit={canWrite ? handleEdit : undefined}
         onDelete={canWrite ? (item) => setDeleteTarget(item) : undefined}
+        totalItems={totalItems}
+        currentPage={currentPage}
+        onPageChange={onPageChange}
+        itemsPerPage={itemsPerPage}
+        pageSizeOptions={pageSizeOptions}
+        onPageSizeChange={onPageSizeChange}
       />
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}

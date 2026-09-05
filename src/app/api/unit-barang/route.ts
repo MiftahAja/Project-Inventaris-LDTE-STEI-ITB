@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, canWriteToLab } from "@/lib/auth";
+import { requireAuth, canWriteToLab, getAssignedLabIds } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logActivity } from "@/lib/activity-log";
 import {
@@ -89,19 +89,34 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await requireAuth();
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "10"), 100);
     const skip = (page - 1) * pageSize;
 
-    // Build cache key based on query parameters
-    const cacheKey = buildCacheKey(CACHE_KEYS.UNIT_BARANG, { page, pageSize });
+    let where: Record<string, unknown> = {};
+
+    // Petugas only see unit barangs from their assigned labs
+    if (session.role === "petugas") {
+      const labIds = await getAssignedLabIds(Number(session.userId));
+      where = { ruangLabId: { in: labIds } };
+    }
+
+    // Build cache key based on user role and query parameters
+    const cacheKey = buildCacheKey(CACHE_KEYS.UNIT_BARANG, {
+      role: session.role,
+      userId: session.userId,
+      page,
+      pageSize,
+    });
 
     const data = await getOrSetCache(
       cacheKey,
       async () => {
         const [unitBarangs, total] = await Promise.all([
           db.unitBarang.findMany({
+            where,
             orderBy: { createdAt: "desc" },
             skip,
             take: pageSize,
@@ -111,7 +126,7 @@ export async function GET(req: NextRequest) {
               meja: { select: { id: true, meja: true } },
             },
           }),
-          db.unitBarang.count(),
+          db.unitBarang.count({ where }),
         ]);
 
         return {
@@ -123,9 +138,9 @@ export async function GET(req: NextRequest) {
             barangId: Number(ub.barangId),
             namaBarang: ub.barang.namaBarang,
             ruangLabId: ub.ruangLabId ? Number(ub.ruangLabId) : null,
-            namaRuang: ub.ruangLab?.namaRuang || "-",
+            ruangLab: ub.ruangLab?.namaRuang || "-",
             mejaId: ub.mejaId ? Number(ub.mejaId) : null,
-            namaMeja: ub.meja?.meja || "-",
+            meja: ub.meja?.meja || "-",
             createdAt: ub.createdAt,
           })),
           total,

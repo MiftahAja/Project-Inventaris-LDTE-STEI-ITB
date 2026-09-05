@@ -10,15 +10,17 @@ export default function UnitBarangCreatePage() {
   const [barangs, setBarangs] = useState<{ id: number; namaBarang: string }[]>([]);
   const [ruangLabs, setRuangLabs] = useState<{ id: number; namaRuang: string }[]>([]);
   const [mejas, setMejas] = useState<{ id: number; meja: string; ruangLabId: number }[]>([]);
+  const [assignedLabIds, setAssignedLabIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bRes, rlRes, mRes] = await Promise.all([
+        const [bRes, rlRes, mRes, assignedLabsRes] = await Promise.all([
           fetch("/api/barang?page=1&pageSize=100"),
           fetch("/api/ruang-lab?page=1&pageSize=100"),
           fetch("/api/meja?page=1&pageSize=100"),
+          fetch("/api/auth/assigned-labs"),
         ]);
         const bData = await bRes.json();
         const rlData = await rlRes.json();
@@ -27,6 +29,9 @@ export default function UnitBarangCreatePage() {
         setBarangs(bData.data.map((b: { id: number; namaBarang: string }) => ({ id: Number(b.id), namaBarang: b.namaBarang })));
         setRuangLabs(rlData.data.map((rl: { id: number; namaRuang: string }) => ({ id: Number(rl.id), namaRuang: rl.namaRuang })));
         setMejas(mData.data.map((m: { id: number; meja: string; ruangLabId: number }) => ({ id: Number(m.id), meja: m.meja, ruangLabId: Number(m.ruangLabId) })));
+
+        const assignedLabsData = await assignedLabsRes.json();
+        setAssignedLabIds(assignedLabsData.labIds || []);
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -52,7 +57,7 @@ export default function UnitBarangCreatePage() {
         barangs={barangs}
         ruangLabs={ruangLabs}
         mejas={mejas}
-        assignedLabIds={[]}
+        assignedLabIds={assignedLabIds}
         userRole={user?.role || ""}
       />
     </AuthLayout>

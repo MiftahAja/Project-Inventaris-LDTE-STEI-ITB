@@ -16,34 +16,30 @@ datasource db {
 // =============================================
 
 model User {
-  id                BigInt            @id @default(autoincrement())
-  name              String            @db.VarChar(255)
-  email             String            @unique @db.VarChar(255)
-  role              String            @default("petugas") @db.VarChar(255)
-  emailVerifiedAt   DateTime?         @map("email_verified_at")
-  password          String            @db.VarChar(255)
-  rememberToken     String?           @map("remember_token") @db.VarChar(100)
-  createdAt         DateTime?         @map("created_at")
-  updatedAt         DateTime?         @map("updated_at")
+  id              BigInt        @id @default(autoincrement())
+  name            String        @db.VarChar(255)
+  email           String        @unique @db.VarChar(255)
+  role            String        @default("petugas") @db.VarChar(255)
+  emailVerifiedAt DateTime?     @map("email_verified_at")
+  password        String        @db.VarChar(255)
+  rememberToken   String?       @map("remember_token") @db.VarChar(100)
+  createdAt       DateTime?     @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt       DateTime?     @updatedAt @db.Timestamptz @map("updated_at")
 
-  tambahPetugas     TambahPetugas?
-  assignments       Assignment[]       @relation("AssignmentUser")
-  assignedByAssign  Assignment[]       @relation("AssignedByUser")
-  sessions          Session[]
-  activityLogs      ActivityLog[]
+  tambahPetugas    TambahPetugas?
+  assignments      Assignment[]  @relation("AssignmentUser")
+  assignedByAssign Assignment[]  @relation("AssignedByUser")
+  sessions         Session[]
+  activityLogs     ActivityLog[]
 
   @@index([createdAt], map: "idx_users_created_at")
   @@map("users")
 }
 
-// ... (skipping other models for brevity, providing the full file structure is required, but I will provide only the necessary changes for the specified models as per tool requirements, wait, the tool requires providing the *exact literal code*. I will have to provide the full file or at least enough context to be unambiguous. Given the file size, I will provide the updated blocks for each affected model.)
-
-// Re-thinking: The tool `replace` requires `old_string` and `new_string` to replace the exact block. I should do this per model.
-
 model PasswordResetToken {
-  email     String   @id @db.VarChar(255)
-  token     String   @db.VarChar(255)
-  createdAt DateTime? @map("created_at")
+  email     String    @id @db.VarChar(255)
+  token     String    @db.VarChar(255)
+  createdAt DateTime? @default(now()) @db.Timestamptz @map("created_at")
 
   @@map("password_reset_tokens")
 }
@@ -85,69 +81,14 @@ model CacheLock {
 }
 
 // =============================================
-// Tabel Master Data Akademik
-// =============================================
-
-model Fakultas {
-  id        BigInt    @id @default(autoincrement())
-  name      String    @unique @db.VarChar(255)
-  createdAt DateTime? @map("created_at")
-  updatedAt DateTime? @map("updated_at")
-
-  programStudis ProgramStudi[]
-
-  @@map("fakultas")
-}
-
-model ProgramStudi {
-  id          BigInt    @id @default(autoincrement())
-  fakultasId  BigInt    @map("fakultas_id")
-  name        String    @db.VarChar(255)
-  createdAt   DateTime? @map("created_at")
-  updatedAt   DateTime? @map("updated_at")
-
-  fakultas     Fakultas     @relation(fields: [fakultasId], references: [id], onDelete: Cascade)
-  mataKuliahs  MataKuliah[]
-
-  @@index([fakultasId], map: "idx_program_studis_fakultas_id")
-  @@map("program_studis")
-}
-
-model MataKuliah {
-  id               BigInt    @id @default(autoincrement())
-  programStudiId   BigInt    @map("program_studi_id")
-  kode             String    @db.VarChar(255)
-  nama             String    @db.VarChar(255)
-  isPraktikum      Boolean?  @map("is_praktikum")
-  createdAt        DateTime? @map("created_at")
-  updatedAt        DateTime? @map("updated_at")
-
-  programStudi ProgramStudi @relation(fields: [programStudiId], references: [id], onDelete: Cascade)
-
-  @@index([programStudiId], map: "idx_mata_kuliahs_program_studi_id")
-  @@map("mata_kuliahs")
-}
-
-model GlobalConfig {
-  id               BigInt    @id @default(autoincrement())
-  nomorSurat       String?   @map("nomor_surat") @db.VarChar(255)
-  lineoaLdte       String?   @map("lineoa_ldte") @db.VarChar(255)
-  fakultasUpdatedAt DateTime? @map("fakultas_updated_at")
-  createdAt        DateTime? @map("created_at")
-  updatedAt        DateTime? @map("updated_at")
-
-  @@map("global_configs")
-}
-
-// =============================================
 // Tabel Inventaris
 // =============================================
 
 model Barang {
-  id        BigInt    @id @default(autoincrement())
-  namaBarang String   @map("nama_barang") @unique @db.VarChar(255)
-  createdAt DateTime? @map("created_at")
-  updatedAt DateTime? @map("updated_at")
+  id         BigInt    @id @default(autoincrement())
+  namaBarang String    @unique @map("nama_barang") @db.VarChar(255)
+  createdAt  DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt  DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
   unitBarangs UnitBarang[]
 
@@ -160,12 +101,12 @@ model RuangLab {
   id        BigInt    @id @default(autoincrement())
   namaRuang String    @map("nama_ruang") @db.VarChar(255)
   deskripsi String?   @db.Text
-  createdAt DateTime? @map("created_at")
-  updatedAt DateTime? @map("updated_at")
+  createdAt DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
-  mejas         Meja[]
-  unitBarangs   UnitBarang[]
-  assignments   Assignment[]
+  mejas       Meja[]
+  unitBarangs UnitBarang[]
+  assignments Assignment[]
 
   @@index([createdAt], map: "idx_ruang_labs_created_at")
   @@map("ruang_labs")
@@ -175,8 +116,8 @@ model Meja {
   id         BigInt    @id @default(autoincrement())
   ruangLabId BigInt    @map("ruang_lab_id")
   meja       String    @db.VarChar(255)
-  createdAt  DateTime? @map("created_at")
-  updatedAt  DateTime? @map("updated_at")
+  createdAt  DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt  DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
   ruangLab    RuangLab     @relation(fields: [ruangLabId], references: [id], onDelete: Restrict)
   unitBarangs UnitBarang[]
@@ -195,17 +136,13 @@ model UnitBarang {
   status        String    @default("Tersedia") @db.VarChar(255)
   ruangLabId    BigInt?   @map("ruang_lab_id")
   mejaId        BigInt?   @map("meja_id")
-  createdAt     DateTime? @map("created_at")
-  updatedAt     DateTime? @map("updated_at")
+  createdAt     DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt     DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
-  barang          Barang              @relation(fields: [barangId], references: [id], onDelete: Cascade)
-  ruangLab        RuangLab?           @relation(fields: [ruangLabId], references: [id], onDelete: Restrict)
-  meja            Meja?               @relation(fields: [mejaId], references: [id], onDelete: Restrict)
-  mutasiStoks     MutasiStok[]
-  barangMasuks    BarangMasuk[]
-  barangKeluars   BarangKeluar[]
-  peminjamans     Peminjaman[]
-  peminjamanPeralatan PeminjamanPeralatan[]
+  barang      Barang       @relation(fields: [barangId], references: [id], onDelete: Cascade)
+  ruangLab    RuangLab?    @relation(fields: [ruangLabId], references: [id], onDelete: Restrict)
+  meja        Meja?        @relation(fields: [mejaId], references: [id], onDelete: Restrict)
+  mutasiStoks MutasiStok[]
 
   @@unique([kodeBarang, ruangLabId])
   @@index([kodeBarang], map: "idx_unit_barangs_kode_barang")
@@ -219,13 +156,13 @@ model UnitBarang {
 }
 
 model MutasiStok {
-  id            BigInt    @id @default(autoincrement())
-  unitBarangId  BigInt    @map("unit_barang_id")
-  tipe          String    @db.VarChar(255)
-  tanggal       DateTime  @db.Date
-  keterangan    String?   @db.Text
-  createdAt     DateTime? @map("created_at")
-  updatedAt     DateTime? @map("updated_at")
+  id           BigInt    @id @default(autoincrement())
+  unitBarangId BigInt    @map("unit_barang_id")
+  tipe         String    @db.VarChar(255)
+  tanggal      DateTime  @db.Date
+  keterangan   String?   @db.Text
+  createdAt    DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt    DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
   unitBarang UnitBarang @relation(fields: [unitBarangId], references: [id], onDelete: Cascade)
 
@@ -233,90 +170,6 @@ model MutasiStok {
   @@index([createdAt], map: "idx_mutasi_stoks_created_at")
   @@index([tipe, createdAt], map: "idx_mutasi_stoks_tipe_created_at")
   @@map("mutasi_stoks")
-}
-
-// =============================================
-// Tabel Transaksi
-// =============================================
-
-model BarangMasuk {
-  id             BigInt    @id @default(autoincrement())
-  unitBarangId   BigInt?   @map("unit_barang_id")
-  kodeBarang     String    @map("kode_barang") @db.VarChar(255)
-  keterangan     String?   @db.Text
-  tglBarangMasuk DateTime  @map("tgl_barang_masuk") @db.Date
-  createdAt      DateTime? @map("created_at")
-  updatedAt      DateTime? @map("updated_at")
-
-  unitBarang UnitBarang? @relation(fields: [unitBarangId], references: [id], onDelete: Cascade)
-
-  @@map("barang_masuks")
-}
-
-model BarangKeluar {
-  id              BigInt    @id @default(autoincrement())
-  unitBarangId    BigInt?   @map("unit_barang_id")
-  kodeBarang      String    @map("kode_barang") @db.VarChar(255)
-  keterangan      String?   @db.Text
-  tglBarangKeluar DateTime  @map("tgl_barang_keluar") @db.Date
-  createdAt       DateTime? @map("created_at")
-  updatedAt       DateTime? @map("updated_at")
-
-  unitBarang UnitBarang? @relation(fields: [unitBarangId], references: [id], onDelete: Cascade)
-
-  @@map("barang_keluars")
-}
-
-model Peminjaman {
-  id            BigInt    @id @default(autoincrement())
-  unitBarangId  BigInt    @map("unit_barang_id")
-  namaPeminjam  String    @map("nama_peminjam") @db.VarChar(255)
-  tanggalPinjam DateTime  @map("tanggal_pinjam") @db.Date
-  tanggalKembali DateTime? @map("tanggal_kembali") @db.Date
-  status        String    @default("Dipinjam") @db.VarChar(255)
-  createdAt     DateTime? @map("created_at")
-  updatedAt     DateTime? @map("updated_at")
-
-  unitBarang UnitBarang @relation(fields: [unitBarangId], references: [id], onDelete: Cascade)
-
-  @@map("peminjamans")
-}
-
-model PeminjamanPeralatan {
-  id              BigInt    @id @default(autoincrement())
-  satuanBarangId  BigInt    @map("satuan_barang_id")
-  nama            String    @db.VarChar(255)
-  nim             String    @db.VarChar(255)
-  barang          Json
-  banyak          Json
-  mulai           DateTime  @db.Date
-  akhir           DateTime  @db.Date
-  status          String    @default("unchecked") @db.VarChar(255)
-  createdAt       DateTime? @map("created_at")
-  updatedAt       DateTime? @map("updated_at")
-
-  unitBarang UnitBarang @relation(fields: [satuanBarangId], references: [id], onDelete: Cascade)
-
-  @@index([satuanBarangId], map: "idx_peminjaman_peralatans_satuan_barang_id")
-  @@map("peminjaman_peralatans")
-}
-
-model SuratKeteranganPraktikum {
-  id        BigInt    @id @default(autoincrement())
-  nama      Json
-  nim       Json
-  matkul    String    @db.VarChar(255)
-  praktikum String    @db.VarChar(255)
-  modul     Int
-  date      DateTime  @db.Date
-  timeStart String    @map("timeStart") @db.VarChar(255)
-  timeEnd   String    @map("timeEnd") @db.VarChar(255)
-  bukti     String?   @db.VarChar(255)
-  status    String    @default("unchecked") @db.VarChar(255)
-  createdAt DateTime? @map("created_at")
-  updatedAt DateTime? @map("updated_at")
-
-  @@map("surat_keterangan_praktikums")
 }
 
 // =============================================
@@ -328,8 +181,8 @@ model TambahPetugas {
   userId    BigInt    @unique @map("user_id")
   noTelp    String?   @map("no_telp") @db.VarChar(255)
   alamat    String?   @db.VarChar(255)
-  createdAt DateTime? @map("created_at")
-  updatedAt DateTime? @map("updated_at")
+  createdAt DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -342,12 +195,12 @@ model Assignment {
   ruangLabId BigInt    @map("ruang_lab_id")
   isActive   Boolean   @default(true) @map("is_active")
   assignedBy BigInt?   @map("assigned_by")
-  createdAt  DateTime? @map("created_at")
-  updatedAt  DateTime? @map("updated_at")
+  createdAt  DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt  DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
-  user         User     @relation("AssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
-  ruangLab     RuangLab @relation(fields: [ruangLabId], references: [id], onDelete: Cascade)
-  assignedByUser User?  @relation("AssignedByUser", fields: [assignedBy], references: [id], onDelete: SetNull)
+  user           User     @relation("AssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  ruangLab       RuangLab @relation(fields: [ruangLabId], references: [id], onDelete: Cascade)
+  assignedByUser User?    @relation("AssignedByUser", fields: [assignedBy], references: [id], onDelete: SetNull)
 
   @@index([userId], map: "idx_assignments_user_id")
   @@index([ruangLabId], map: "idx_assignments_ruang_lab_id")
@@ -360,18 +213,18 @@ model Assignment {
 // =============================================
 
 model ActivityLog {
-  id           BigInt    @id @default(autoincrement())
-  logName      String?   @map("log_name") @db.VarChar(255)
-  description  String    @db.Text
-  subjectType  String?   @map("subject_type") @db.VarChar(255)
-  subjectId    BigInt?   @map("subject_id")
-  event        String?   @db.VarChar(255)
-  causerType   String?   @map("causer_type") @db.VarChar(255)
-  causerId     BigInt?   @map("causer_id")
-  properties   Json?
-  batchUuid    String?   @map("batch_uuid")
-  createdAt    DateTime? @map("created_at")
-  updatedAt    DateTime? @map("updated_at")
+  id          BigInt    @id @default(autoincrement())
+  logName     String?   @map("log_name") @db.VarChar(255)
+  description String    @db.Text
+  subjectType String?   @map("subject_type") @db.VarChar(255)
+  subjectId   BigInt?   @map("subject_id")
+  event       String?   @db.VarChar(255)
+  causerType  String?   @map("causer_type") @db.VarChar(255)
+  causerId    BigInt?   @map("causer_id")
+  properties  Json?
+  batchUuid   String?   @map("batch_uuid")
+  createdAt   DateTime? @default(now()) @db.Timestamptz @map("created_at")
+  updatedAt   DateTime? @updatedAt @db.Timestamptz @map("updated_at")
 
   user User? @relation(fields: [causerId], references: [id], onDelete: SetNull)
 

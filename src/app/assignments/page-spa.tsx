@@ -12,14 +12,30 @@ export default function AssignmentsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/assignments");
-        const data = await res.json();
-        setRuangLabs((data.data || data || []).map((rl: Record<string, unknown>) => ({
-          id: Number(rl.id),
-          namaRuang: rl.namaRuang as string,
-          deskripsi: (rl.deskripsi as string) || "",
-          petugas: (rl.petugas as string) || null,
-          isActive: rl.isActive as boolean,
+        const [labRes, assignRes] = await Promise.all([
+          fetch("/api/ruang-lab?page=1&pageSize=100"),
+          fetch("/api/assignments"),
+        ]);
+        const labData = await labRes.json();
+        const assignData = await assignRes.json();
+
+        const labs = labData.data || [];
+        const assignments = assignData.data || assignData || [];
+
+        // Build a map of ruangLabId to active assignment
+        const activeAssignments = new Map<number, string>();
+        assignments.forEach((a: { ruangLabId: number; isActive: boolean; user?: { name: string } }) => {
+          if (a.isActive && a.user) {
+            activeAssignments.set(Number(a.ruangLabId), a.user.name);
+          }
+        });
+
+        setRuangLabs(labs.map((lab: { id: number; namaRuang: string; deskripsi?: string }) => ({
+          id: Number(lab.id),
+          namaRuang: lab.namaRuang,
+          deskripsi: lab.deskripsi || "",
+          petugas: activeAssignments.get(Number(lab.id)) || null,
+          isActive: activeAssignments.has(Number(lab.id)),
         })));
       } catch (error) {
         console.error("Error:", error);

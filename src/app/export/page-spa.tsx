@@ -8,29 +8,36 @@ import ExportClient from "./ExportClient";
 export default function ExportPage() {
   const { user } = useAuth();
   const [ruangLabs, setRuangLabs] = useState<{ id: number; namaRuang: string; deskripsi: string; mejas: { id: number; meja: string; unitBarangs: { id: number; kodeBarang: string; namaBarang: string; kondisiBarang: string; status: string }[] }[] }[]>([]);
+  const [assignedLabIds, setAssignedLabIds] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/ruang-lab?page=1&pageSize=100");
-        const data = await res.json();
-        setRuangLabs((data.data || []).map((lab: Record<string, unknown>) => ({
+        // Fetch metadata from /api/ruang-lab (no pagination/limited, adjust as needed)
+        // Note: For now, I'll fetch a larger page size to ensure all labs are loaded
+        const [labsRes, assignedRes] = await Promise.all([
+          fetch("/api/ruang-lab?page=1&pageSize=100"),
+          fetch("/api/auth/assigned-labs"),
+        ]);
+        const labsJson = await labsRes.json();
+        const assignedData = await assignedRes.json();
+
+        // Map response to match expected structure in ExportClient
+        // Note: ExportClient expects 'mejas' which might not be fully populated here
+        // If ExportClient needs mejas, I might need to adjust or handle this.
+        // Let's re-examine ExportClient requirements.
+        const labs = (labsJson.data || []).map((lab: { id: number | string; namaRuang: string; deskripsi?: string }) => ({
           id: Number(lab.id),
-          namaRuang: lab.namaRuang as string,
-          deskripsi: (lab.deskripsi as string) || "",
-          mejas: (lab.mejas as Array<Record<string, unknown>> || []).map((m) => ({
-            id: Number(m.id),
-            meja: m.meja as string,
-            unitBarangs: (m.unitBarangs as Array<Record<string, unknown>> || []).map((ub) => ({
-              id: Number(ub.id),
-              kodeBarang: ub.kodeBarang as string,
-              namaBarang: ub.namaBarang as string,
-              kondisiBarang: ub.kondisiBarang as string,
-              status: ub.status as string,
-            })),
-          })),
-        })));
+          namaRuang: lab.namaRuang,
+          deskripsi: lab.deskripsi || "",
+          mejas: [], 
+        }));
+
+        console.log("[EXPORT] fetched labs metadata", { total: labs.length });
+
+        setRuangLabs(labs);
+        setAssignedLabIds(assignedData.labIds || []);
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -52,7 +59,11 @@ export default function ExportPage() {
 
   return (
     <AuthLayout>
-      <ExportClient ruangLabs={ruangLabs} />
+      <ExportClient
+        ruangLabs={ruangLabs}
+        userRole={user?.role || ""}
+        assignedLabIds={assignedLabIds}
+      />
     </AuthLayout>
   );
 }

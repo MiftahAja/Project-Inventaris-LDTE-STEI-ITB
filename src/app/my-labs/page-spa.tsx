@@ -14,14 +14,24 @@ export default function MyLabsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("/api/ruang-lab?page=1&pageSize=100");
-        const data = await res.json();
-        setLabs(data.data.map((lab: Record<string, unknown>) => ({
-          id: Number(lab.id),
-          namaRuang: lab.namaRuang as string,
-          deskripsi: (lab.deskripsi as string) || "",
-          unitCount: (lab.unitCount as number) || 0,
-        })));
+        const [ruangLabRes, assignedLabsRes] = await Promise.all([
+          fetch("/api/ruang-lab?page=1&pageSize=100"),
+          fetch("/api/auth/assigned-labs"),
+        ]);
+        const ruangLabData = await ruangLabRes.json();
+        const assignedLabsData = await assignedLabsRes.json();
+        const assignedLabIds = assignedLabsData.labIds || [];
+
+        // Filter labs to only show assigned ones
+        const filteredLabs = ruangLabData.data
+          .filter((lab: { id: number }) => assignedLabIds.includes(Number(lab.id)))
+          .map((lab: Record<string, unknown>) => ({
+            id: Number(lab.id),
+            namaRuang: lab.namaRuang as string,
+            deskripsi: (lab.deskripsi as string) || "",
+            unitCount: (lab.unitCount as number) || 0,
+          }));
+        setLabs(filteredLabs);
       } catch (error) {
         console.error("Error:", error);
       } finally {

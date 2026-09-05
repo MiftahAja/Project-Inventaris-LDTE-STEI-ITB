@@ -28,6 +28,8 @@ interface DataTableProps<T> {
   currentPage?: number;
   onPageChange?: (page: number) => void;
   itemsPerPage?: number;
+  pageSizeOptions?: number[];
+  onPageSizeChange?: (size: number) => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -48,10 +50,16 @@ export default function DataTable<T extends Record<string, any>>({
   currentPage,
   onPageChange,
   itemsPerPage = 10,
+  pageSizeOptions = [10, 20, 50],
+  onPageSizeChange,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
 
   const isServerSide = totalItems !== undefined && currentPage !== undefined && onPageChange !== undefined;
+  const enablePaginationControls = isServerSide && itemsPerPage > 0;
+
+  console.log("[DT] isServerSide, totalItems, currentPage, itemsPerPage, enablePaginationControls",
+    { isServerSide, totalItems, currentPage, itemsPerPage, enablePaginationControls });
 
   const filtered = searchKey && !isServerSide
     ? data.filter((item) =>
@@ -60,8 +68,9 @@ export default function DataTable<T extends Record<string, any>>({
     : data;
 
   const totalPages = isServerSide ? Math.ceil((totalItems || 0) / itemsPerPage) : Math.ceil(filtered.length / itemsPerPage);
+  const totalShown = isServerSide ? totalItems : filtered.length;
   const page = isServerSide ? currentPage : 1;
-  const start = isServerSide ? (page - 1) * itemsPerPage : (page - 1) * itemsPerPage;
+  const start = (page - 1) * itemsPerPage;
   const paginated = isServerSide ? data : filtered.slice(start, start + itemsPerPage);
 
   return (
@@ -181,15 +190,15 @@ export default function DataTable<T extends Record<string, any>>({
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {enablePaginationControls && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Menampilkan {start + 1} - {Math.min(start + itemsPerPage, isServerSide ? (totalItems || 0) : filtered.length)} dari{" "}
-              {isServerSide ? totalItems : filtered.length} data
+              Menampilkan {start + 1} -              {Math.min(start + itemsPerPage, totalShown)} dari{" "}
+              {totalShown} data
             </p>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => isServerSide ? onPageChange?.(Math.max(1, page - 1)) : undefined}
+                onClick={() => onPageChange?.(Math.max(1, page - 1))}
                 disabled={page === 1}
                 className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
               >
@@ -199,12 +208,27 @@ export default function DataTable<T extends Record<string, any>>({
                 {page} / {totalPages}
               </span>
               <button
-                onClick={() => isServerSide ? onPageChange?.(Math.min(totalPages, page + 1)) : undefined}
+                onClick={() => onPageChange?.(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
                 className="p-2 text-gray-400 hover:text-gray-600 disabled:opacity-50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  const size = Number(e.target.value);
+                  itemsPerPage = size;
+                  onPageSizeChange?.(size);
+                }}
+                className="ml-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-1 px-2 focus:ring-2 focus:ring-blue-500"
+              >
+                {pageSizeOptions.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         )}
