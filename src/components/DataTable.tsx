@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Search, ChevronLeft, ChevronRight, Plus, Edit, Trash2, Eye } from "lucide-react";
-import Link from "next/link";
 
 interface Column<T> {
   key: string;
@@ -83,7 +83,7 @@ export default function DataTable<T extends Record<string, any>>({
           )}
           {addHref && (
             <Link
-              href={addHref}
+              to={addHref}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-sm font-medium rounded-lg transition-all duration-150"
             >
               <Plus className="w-4 h-4" />

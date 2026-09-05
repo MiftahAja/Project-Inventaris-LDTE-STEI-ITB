@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
-import { Filter, X, } from "lucide-react";
+import SuccessNotification from "@/components/SuccessNotification";
+import { Filter, X } from "lucide-react";
 
 interface UnitBarang {
   id: number;
@@ -46,19 +47,19 @@ export default function UnitBarangClient({
   userRole,
   assignedLabIds,
 }: UnitBarangClientProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const canWrite = userRole === "admin" || assignedLabIds.length > 0;
 
   const [filterRuangLab, setFilterRuangLab] = useState<number | "">("");
   const [filterMeja, setFilterMeja] = useState<number | "">("");
+  const [searchParams] = useSearchParams();
   const [deleteTarget, setDeleteTarget] = useState<UnitBarang | null>(null);
+  const successMessage = searchParams.get("success");
 
-  // Filter mejas based on selected ruang lab
   const availableMejas = filterRuangLab !== ""
     ? mejas.filter((m) => m.ruangLabId === filterRuangLab)
     : mejas;
 
-  // Apply filters to data
   const filteredUnitBarangs = unitBarangs.filter((item) => {
     if (filterRuangLab !== "" && item.ruangLabId !== filterRuangLab) return false;
     if (filterMeja !== "" && item.mejaId !== filterMeja) return false;
@@ -66,7 +67,7 @@ export default function UnitBarangClient({
   });
 
   const handleEdit = (item: UnitBarang) => {
-    router.push(`/unit-barang/edit/${item.id}`);
+    navigate(`/unit-barang/edit/${item.id}`);
   };
 
   const handleDelete = async () => {
@@ -74,7 +75,7 @@ export default function UnitBarangClient({
     try {
       await fetch(`/api/unit-barang/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -89,7 +90,16 @@ export default function UnitBarangClient({
 
   return (
     <div className="space-y-4">
-      {/* Filter Section */}
+      {successMessage && (
+        <SuccessNotification
+          message={successMessage}
+          onDismiss={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("success");
+            navigate(`/unit-barang?${params.toString()}`, { replace: true });
+          }}
+        />
+      )}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 animate-slide-up">
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -144,7 +154,6 @@ export default function UnitBarangClient({
         </div>
       </div>
 
-      {/* Data Table */}
       <DataTable
         data={filteredUnitBarangs}
         columns={[
@@ -201,7 +210,7 @@ export default function UnitBarangClient({
         onConfirm={handleDelete}
         requiredText={deleteTarget?.kodeBarang || ""}
         title="Hapus Unit Barang"
-        description={`Ketik kode barang \"${deleteTarget?.kodeBarang || ""}\" untuk menghapusnya.`}
+        description={`Ketik kode barang "${deleteTarget?.kodeBarang || ""}" untuk menghapusnya.`}
       />
     </div>
   );

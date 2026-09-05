@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Save, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 interface UnitBarangFormProps {
   initialData?: {
@@ -30,7 +29,7 @@ export default function UnitBarangForm({
   assignedLabIds,
   userRole,
 }: UnitBarangFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     barangId: initialData?.barangId?.toString() || "",
     kodeBarang: initialData?.kodeBarang || "",
@@ -42,14 +41,12 @@ export default function UnitBarangForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Filter labs based on role
   const availableRuangLabs = userRole === "admin"
     ? ruangLabs
     : ruangLabs.filter((rl) => assignedLabIds.includes(rl.id));
 
   const filteredMejas = mejas.filter(
     (m) => {
-      // If no lab selected, show only mejas from assigned labs (or all for admin)
       if (!formData.ruangLabId) {
         return userRole === "admin" || assignedLabIds.includes(m.ruangLabId);
       }
@@ -75,8 +72,7 @@ export default function UnitBarangForm({
       });
 
       if (res.ok) {
-        router.push("/unit-barang");
-        router.refresh();
+        navigate(initialData ? "/unit-barang?success=Unit barang berhasil diupdate" : "/unit-barang?success=Unit barang berhasil ditambahkan");
       } else {
         const data = await res.json();
         setError(data.error || "Terjadi kesalahan");
@@ -92,7 +88,7 @@ export default function UnitBarangForm({
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link
-          href="/unit-barang"
+          to="/unit-barang"
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -239,7 +235,7 @@ export default function UnitBarangForm({
               {loading ? "Menyimpan..." : "Simpan"}
             </button>
             <Link
-              href="/unit-barang"
+              to="/unit-barang"
               className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-lg transition-colors"
             >
               Batal

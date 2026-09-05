@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate, Link } from "react-router-dom";
 import { Save, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 interface BarangFormProps {
   initialData?: {
@@ -13,7 +12,7 @@ interface BarangFormProps {
 }
 
 export default function BarangForm({ initialData }: BarangFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [namaBarang, setNamaBarang] = useState(initialData?.namaBarang || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -34,8 +33,7 @@ export default function BarangForm({ initialData }: BarangFormProps) {
       });
 
       if (res.ok) {
-        router.push("/barang");
-        router.refresh();
+        navigate(initialData ? "/barang?success=Barang berhasil diupdate" : "/barang?success=Barang berhasil ditambahkan");
       } else {
         const data = await res.json();
         setError(data.error || "Terjadi kesalahan");
@@ -51,7 +49,7 @@ export default function BarangForm({ initialData }: BarangFormProps) {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link
-          href="/barang"
+          to="/barang"
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -93,7 +91,7 @@ export default function BarangForm({ initialData }: BarangFormProps) {
               {loading ? "Menyimpan..." : "Simpan"}
             </button>
             <Link
-              href="/barang"
+              to="/barang"
               className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-lg transition-colors"
             >
               Batal

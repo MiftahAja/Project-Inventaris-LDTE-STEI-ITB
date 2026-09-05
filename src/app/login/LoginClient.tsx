@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, lazy, Suspense } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import Image from "next/image";
+import { useAuth } from "@/lib/auth-context";
 
 // Lazy-load Aurora WebGL animation (~heavy) - not needed for initial paint
-const Aurora = dynamic(() => import("@/components/Aurora"), { ssr: false });
+const Aurora = lazy(() => import("@/components/Aurora"));
 
-export default function LoginClient() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function LoginPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const error = searchParams.get("error");
+  const { login } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,20 +23,13 @@ export default function LoginClient() {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append("email", email);
-    formData.append("password", password);
-
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.redirected) {
-        router.push(res.url);
+    const result = await login(email, password);
+    if (result.success) {
+      navigate("/home");
+    } else {
+      if (result.error) {
+        navigate(`/login?error=${encodeURIComponent(result.error)}`);
       }
-    } catch {
       setLoading(false);
     }
   };
@@ -45,29 +37,24 @@ export default function LoginClient() {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Aurora Animation */}
-      <title>Login | Inventaris LDTE</title>
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-950">
         {/* Aurora Effect */}
         <div className="absolute inset-0 z-0">
-          <Aurora
-            colorStops={["#3B82F6", "#60A5FA", "#2563EB"]}
-            blend={0.5}
-            amplitude={1.0}
-            speed={1}
-          />
+          <Suspense fallback={null}>
+            <Aurora
+              colorStops={["#3B82F6", "#60A5FA", "#2563EB"]}
+              blend={0.5}
+              amplitude={1.0}
+              speed={1}
+            />
+          </Suspense>
         </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
-            <Image
-              src="/logo.svg"
-              alt="Logo LDTE"
-              width={40}
-              height={40}
-              className="w-10 h-10"
-            />
+            <img src="/logo.svg" alt="Logo LDTE" className="w-10 h-10" />
             <span className="text-xl font-bold">Inventaris LDTE</span>
           </div>
 
@@ -88,13 +75,7 @@ export default function LoginClient() {
         <div className="w-full max-w-md animate-fade-in">
           {/* Mobile Logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <Image
-              src="/logo.svg"
-              alt="Logo LDTE"
-              width={40}
-              height={40}
-              className="w-10 h-10"
-            />
+            <img src="/logo.svg" alt="Logo LDTE" className="w-10 h-10" />
             <span className="text-xl font-bold text-gray-900 dark:text-white">
               Inventaris LDTE
             </span>
@@ -103,7 +84,7 @@ export default function LoginClient() {
           {/* Form Card */}
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-800 p-8">
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-shadow-white text-white mb-2">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 Login Account
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -164,7 +145,7 @@ export default function LoginClient() {
                   </span>
                 </label>
                 <Link
-                  href="/register"
+                  to="/register"
                   className="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
                 >
                   Already a member?

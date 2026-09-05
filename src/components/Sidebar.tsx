@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useAuth } from "@/lib/auth-context";
 import {
   LayoutDashboard,
   Package,
@@ -76,7 +76,10 @@ const menuItems = [
 ];
 
 export default function Sidebar({ user, children }: SidebarProps) {
-  const pathname = usePathname();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const pathname = location.pathname;
   const [search, setSearch] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -84,7 +87,6 @@ export default function Sidebar({ user, children }: SidebarProps) {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    // Sync with the class already set by the inline script to prevent FOUC
     const isDark = document.documentElement.classList.contains("dark");
     setDarkMode(isDark);
   }, []);
@@ -104,6 +106,11 @@ export default function Sidebar({ user, children }: SidebarProps) {
       ),
     }))
     .filter((group) => group.items.length > 0);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   const sidebarContent = (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700">
@@ -136,7 +143,6 @@ export default function Sidebar({ user, children }: SidebarProps) {
       {/* Menu Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-2">
         {filteredMenu.map((group) => {
-          // Check role access
           if (group.roles && !group.roles.includes(user.role)) {
             return null;
           }
@@ -153,7 +159,7 @@ export default function Sidebar({ user, children }: SidebarProps) {
                 return (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    to={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 mb-1 rounded-lg text-sm font-medium transition-all duration-200",
@@ -216,13 +222,7 @@ export default function Sidebar({ user, children }: SidebarProps) {
         <ConfirmDialog
           isOpen={showLogoutConfirm}
           onClose={() => setShowLogoutConfirm(false)}
-          onConfirm={async () => {
-            const form = document.createElement("form");
-            form.method = "POST";
-            form.action = "/api/auth/logout";
-            document.body.appendChild(form);
-            form.submit();
-          }}
+          onConfirm={handleLogout}
           title="Konfirmasi Logout"
           description="Apakah benar anda ingin logout?"
           confirmLabel="Ya, Logout"

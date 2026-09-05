@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import SuccessNotification from "@/components/SuccessNotification";
 
 interface User {
   id: number;
@@ -18,12 +20,14 @@ interface PetugasClientProps {
 }
 
 export default function PetugasClient({ initialUsers, initialTotal }: PetugasClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const successMessage = searchParams.get("success");
 
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = 10;
@@ -47,16 +51,18 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
   }, [page, fetchData]);
 
   const handlePageChange = (newPage: number) => {
-    router.push(`/petugas?page=${newPage}`);
+    navigate(`/petugas?page=${newPage}`);
   };
 
   const handleEdit = (item: User) => {
-    router.push(`/petugas/edit/${item.id}`);
+    navigate(`/petugas/edit/${item.id}`);
   };
 
-  const handleDelete = async (item: User) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await fetch(`/api/petugas/${item.id}`, { method: "DELETE" });
+      await fetch(`/api/petugas/${deleteTarget.id}`, { method: "DELETE" });
+      setDeleteTarget(null);
       fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
@@ -64,24 +70,44 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
   };
 
   return (
-    <DataTable
-      data={users}
-      columns={[
-        { key: "name", label: "Nama" },
-        { key: "email", label: "Email" },
-      ]}
-      title="Daftar Petugas"
-      addHref="/petugas/create"
-      addLabel="Tambah Petugas"
-      searchPlaceholder="Cari nama petugas..."
-      searchKey="name"
-      onEdit={handleEdit}
-      onDelete={handleDelete}
-      // Pagination props
-      totalItems={total}
-      currentPage={page}
-      onPageChange={handlePageChange}
-      itemsPerPage={pageSize}
-    />
+    <>
+      {successMessage && (
+        <SuccessNotification
+          message={successMessage}
+          onDismiss={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("success");
+            navigate(`/petugas?${params.toString()}`, { replace: true });
+          }}
+        />
+      )}
+      <DataTable
+        data={users}
+        columns={[
+          { key: "name", label: "Nama" },
+          { key: "email", label: "Email" },
+        ]}
+        title="Daftar Petugas"
+        addHref="/petugas/create"
+        addLabel="Tambah Petugas"
+        searchPlaceholder="Cari nama petugas..."
+        searchKey="name"
+        onEdit={handleEdit}
+        onDelete={(item) => setDeleteTarget(item)}
+        // Pagination props
+        totalItems={total}
+        currentPage={page}
+        onPageChange={handlePageChange}
+        itemsPerPage={pageSize}
+      />
+      <ConfirmDeleteModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        requiredText={deleteTarget?.name || ""}
+        title="Hapus Petugas"
+        description={`Ketik nama petugas "${deleteTarget?.name || ""}" untuk menghapusnya.`}
+      />
+    </>
   );
 }

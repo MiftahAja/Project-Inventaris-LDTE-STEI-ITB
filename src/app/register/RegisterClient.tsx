@@ -1,19 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, lazy, Suspense } from "react";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, ArrowRight } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import dynamic from "next/dynamic";
+import { useAuth } from "@/lib/auth-context";
 
 // Lazy-load Aurora WebGL animation (~heavy) - not needed for initial paint
-const Aurora = dynamic(() => import("@/components/Aurora"), { ssr: false });
+const Aurora = lazy(() => import("@/components/Aurora"));
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const error = searchParams.get("error");
+  const { register } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,22 +26,13 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("password", password);
-    formData.append("confirmPassword", confirmPassword);
-
-    try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (res.redirected) {
-        router.push(res.url);
+    const result = await register(name, email, password, confirmPassword);
+    if (result.success) {
+      navigate("/login");
+    } else {
+      if (result.error) {
+        navigate(`/register?error=${encodeURIComponent(result.error)}`);
       }
-    } catch {
       setLoading(false);
     }
   };
@@ -53,25 +43,21 @@ export default function RegisterPage() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gray-950">
         {/* Aurora Effect */}
         <div className="absolute inset-0 z-0">
-          <Aurora
-            colorStops={["#3B82F6", "#60A5FA", "#2563EB"]}
-            blend={0.5}
-            amplitude={1.0}
-            speed={1}
-          />
+          <Suspense fallback={null}>
+            <Aurora
+              colorStops={["#3B82F6", "#60A5FA", "#2563EB"]}
+              blend={0.5}
+              amplitude={1.0}
+              speed={1}
+            />
+          </Suspense>
         </div>
 
         {/* Content */}
         <div className="relative z-10 flex flex-col justify-center px-16 text-white">
           {/* Logo */}
           <div className="flex items-center gap-3 mb-12">
-           <Image
-                src="/logo.svg"
-                alt="Logo LDTE"
-                width={40}
-                height={40}
-                className="w-10 h-10"
-            />
+            <img src="/logo.svg" alt="Logo LDTE" className="w-10 h-10" />
             <span className="text-xl font-bold">Inventaris LDTE</span>
           </div>
 
@@ -92,13 +78,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-md animate-fade-in">
           {/* Mobile Logo */}
           <div className="flex items-center gap-3 mb-8 lg:hidden">
-            <Image
-                src="/logo.svg"
-                alt="Logo LDTE"
-                width={40}
-                height={40}
-                className="w-10 h-10"
-            />
+            <img src="/logo.svg" alt="Logo LDTE" className="w-10 h-10" />
             <span className="text-xl font-bold text-gray-900 dark:text-white">
               Inventaris LDTE
             </span>
@@ -115,15 +95,13 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {error && (
-              <div className="mb-6 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                <p className="text-sm text-red-600 dark:text-red-400">
-                  {error}
-                </p>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+              )}
+
               <div>
                 <input
                   type="text"
@@ -216,7 +194,7 @@ export default function RegisterPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Sudah punya akun?{" "}
                 <Link
-                  href="/login"
+                  to="/login"
                   className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors"
                 >
                   Masuk

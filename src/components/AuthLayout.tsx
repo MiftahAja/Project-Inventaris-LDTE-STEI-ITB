@@ -1,13 +1,22 @@
+"use client";
+
 import Sidebar from "./Sidebar";
-import { getUser } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
-  userId: number;
 }
 
-export default async function AuthLayout({ children, userId }: AuthLayoutProps) {
-  const user = await getUser(userId);
+export default function AuthLayout({ children }: AuthLayoutProps) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!user) {
     return <div className="flex items-center justify-center h-screen">User not found</div>;
@@ -16,7 +25,7 @@ export default async function AuthLayout({ children, userId }: AuthLayoutProps) 
   return (
     <Sidebar
       user={{
-        id: Number(user.id),
+        id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,

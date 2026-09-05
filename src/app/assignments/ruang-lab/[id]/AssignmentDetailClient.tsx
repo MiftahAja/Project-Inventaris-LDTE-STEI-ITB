@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, UserPlus, UserMinus, Save } from "lucide-react";
-import Link from "next/link";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { ArrowLeft, UserPlus, UserMinus } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface Assignment {
@@ -29,7 +28,7 @@ export default function AssignmentDetailClient({
   assignments,
   petugas,
 }: AssignmentDetailClientProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [selectedPetugas, setSelectedPetugas] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +49,7 @@ export default function AssignmentDetailClient({
       });
 
       if (res.ok) {
-        router.refresh();
+        window.location.reload();
         setSelectedPetugas("");
       }
     } catch (error) {
@@ -66,7 +65,7 @@ export default function AssignmentDetailClient({
       await fetch(`/api/assignments/${assignmentId}`, {
         method: "DELETE",
       });
-      router.refresh();
+      window.location.reload();
     } catch (error) {
       console.error("Deactivate error:", error);
     } finally {
@@ -78,7 +77,7 @@ export default function AssignmentDetailClient({
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Link
-          href="/assignments"
+          to="/assignments"
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />

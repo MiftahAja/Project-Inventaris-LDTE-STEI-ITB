@@ -10,8 +10,9 @@ export async function POST(req: NextRequest) {
     const password = formData.get("password") as string;
 
     if (!email || !password) {
-      return NextResponse.redirect(
-        new URL("/login?error=Email dan password harus diisi", req.url)
+      return NextResponse.json(
+        { error: "Email dan password harus diisi" },
+        { status: 400 }
       );
     }
 
@@ -20,25 +21,28 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.redirect(
-        new URL("/login?error=Email atau password salah", req.url)
+      return NextResponse.json(
+        { error: "Email atau password salah" },
+        { status: 401 }
       );
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      return NextResponse.redirect(
-        new URL("/login?error=Email atau password salah", req.url)
+      return NextResponse.json(
+        { error: "Email atau password salah" },
+        { status: 401 }
       );
     }
 
     await createSession(Number(user.id), user.role);
 
-    return NextResponse.redirect(new URL("/home", req.url));
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Login error:", error);
-    return NextResponse.redirect(
-      new URL("/login?error=Terjadi kesalahan server", req.url)
+    return NextResponse.json(
+      { error: "Terjadi kesalahan server" },
+      { status: 500 }
     );
   }
 }

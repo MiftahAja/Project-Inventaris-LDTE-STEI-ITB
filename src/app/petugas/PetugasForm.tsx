@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate, Link } from "react-router-dom";
 import { Save, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 interface PetugasFormProps {
   initialData?: {
@@ -15,7 +14,7 @@ interface PetugasFormProps {
 }
 
 export default function PetugasForm({ initialData, isEdit = false }: PetugasFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: initialData?.name || "",
     email: initialData?.email || "",
@@ -45,8 +44,7 @@ export default function PetugasForm({ initialData, isEdit = false }: PetugasForm
       });
 
       if (res.ok) {
-        router.push("/petugas");
-        router.refresh();
+        navigate(initialData ? "/petugas?success=Petugas berhasil diupdate" : "/petugas?success=Petugas berhasil ditambahkan");
       } else {
         const data = await res.json();
         setError(data.error || "Terjadi kesalahan");
@@ -62,7 +60,7 @@ export default function PetugasForm({ initialData, isEdit = false }: PetugasForm
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link
-          href="/petugas"
+          to="/petugas"
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -132,7 +130,7 @@ export default function PetugasForm({ initialData, isEdit = false }: PetugasForm
               {loading ? "Menyimpan..." : "Simpan"}
             </button>
             <Link
-              href="/petugas"
+              to="/petugas"
               className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-lg transition-colors"
             >
               Batal

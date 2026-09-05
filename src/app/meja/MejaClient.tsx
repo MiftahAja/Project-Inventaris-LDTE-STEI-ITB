@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
+import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import SuccessNotification from "@/components/SuccessNotification";
 import { Package, X } from "lucide-react";
 
 interface UnitBarang {
@@ -36,8 +38,8 @@ export default function MejaClient({
   userRole,
   assignedLabIds,
 }: MejaClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const canWrite = userRole === "admin" || assignedLabIds.length > 0;
 
   const [mejas, setMejas] = useState<Meja[]>(initialMejas);
@@ -46,6 +48,8 @@ export default function MejaClient({
 
   const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Meja | null>(null);
+  const successMessage = searchParams.get("success");
 
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = 10;
@@ -69,16 +73,18 @@ export default function MejaClient({
   }, [page, fetchData]);
 
   const handlePageChange = (newPage: number) => {
-    router.push(`/meja?page=${newPage}`);
+    navigate(`/meja?page=${newPage}`);
   };
 
   const handleEdit = (item: Meja) => {
-    router.push(`/meja/edit/${item.id}`);
+    navigate(`/meja/edit/${item.id}`);
   };
 
-  const handleDelete = async (item: Meja) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await fetch(`/api/meja/${item.id}`, { method: "DELETE" });
+      await fetch(`/api/meja/${deleteTarget.id}`, { method: "DELETE" });
+      setDeleteTarget(null);
       fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
@@ -94,6 +100,16 @@ export default function MejaClient({
 
   return (
     <div className="space-y-4">
+      {successMessage && (
+        <SuccessNotification
+          message={successMessage}
+          onDismiss={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("success");
+            navigate(`/meja?${params.toString()}`, { replace: true });
+          }}
+        />
+      )}
       <DataTable
         data={mejas}
         columns={[
@@ -115,7 +131,7 @@ export default function MejaClient({
         searchPlaceholder="Cari nomor meja..."
         searchKey="meja"
         onEdit={canWrite ? handleEdit : undefined}
-        onDelete={canWrite ? handleDelete : undefined}
+        onDelete={canWrite ? (item) => setDeleteTarget(item) : undefined}
         onView={handleViewBarang}
         // Pagination props
         totalItems={total}
@@ -124,11 +140,19 @@ export default function MejaClient({
         itemsPerPage={pageSize}
       />
 
+      <ConfirmDeleteModal
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        requiredText={deleteTarget?.meja || ""}
+        title="Hapus Meja"
+        description={`Ketik nomor meja "${deleteTarget?.meja || ""}" untuk menghapusnya.`}
+      />
+
       {/* Modal Lihat Barang */}
       {showModal && selectedMeja && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in-overlay">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col animate-scale-in">
-            {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <div>
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">
@@ -146,7 +170,6 @@ export default function MejaClient({
               </button>
             </div>
 
-            {/* Content */}
             <div className="flex-1 overflow-y-auto px-6 py-4">
               {barangList.length === 0 ? (
                 <div className="text-center py-8">

@@ -1,6 +1,8 @@
 "use client";
 
+import { useSearchParams, useNavigate } from "react-router-dom";
 import DataTable from "@/components/DataTable";
+import SuccessNotification from "@/components/SuccessNotification";
 import { formatDate } from "@/lib/utils";
 
 interface MutasiStok {
@@ -17,8 +19,23 @@ interface MutasiStokClientProps {
 }
 
 export default function MutasiStokClient({ mutasiStoks }: MutasiStokClientProps) {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const successMessage = searchParams.get("success");
+
   return (
-    <DataTable
+    <>
+      {successMessage && (
+        <SuccessNotification
+          message={successMessage}
+          onDismiss={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("success");
+            navigate(`/mutasi-stok?${params.toString()}`, { replace: true });
+          }}
+        />
+      )}
+      <DataTable
       data={mutasiStoks}
       columns={[
         { key: "namaBarang", label: "Nama Barang" },
@@ -48,5 +65,6 @@ export default function MutasiStokClient({ mutasiStoks }: MutasiStokClientProps)
       title="Mutasi Stok"
       showActions={false}
     />
+    </>
   );
 }

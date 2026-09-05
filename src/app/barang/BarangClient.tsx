@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
+import SuccessNotification from "@/components/SuccessNotification";
 
 interface Barang {
   id: number;
@@ -18,10 +19,11 @@ interface BarangClientProps {
 }
 
 export default function BarangClient({ initialBarangs, initialTotal, userRole }: BarangClientProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isAdmin = userRole === "admin";
   const [deleteTarget, setDeleteTarget] = useState<Barang | null>(null);
+  const successMessage = searchParams.get("success");
   
   const [barangs, setBarangs] = useState<Barang[]>(initialBarangs);
   const [total, setTotal] = useState(initialTotal);
@@ -49,11 +51,11 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
   }, [page, fetchData]);
 
   const handlePageChange = (newPage: number) => {
-    router.push(`/barang?page=${newPage}`);
+    navigate(`/barang?page=${newPage}`);
   };
 
   const handleEdit = (item: Barang) => {
-    router.push(`/barang/edit/${item.id}`);
+    navigate(`/barang/edit/${item.id}`);
   };
 
   const handleDelete = async () => {
@@ -87,13 +89,23 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
         onPageChange={handlePageChange}
         itemsPerPage={pageSize}
       />
+      {successMessage && (
+        <SuccessNotification
+          message={successMessage}
+          onDismiss={() => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.delete("success");
+            navigate(`/barang?${params.toString()}`, { replace: true });
+          }}
+        />
+      )}
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
         requiredText={deleteTarget?.namaBarang || ""}
         title="Hapus Barang"
-        description={`Ketik nama barang \"${deleteTarget?.namaBarang || ""}\" untuk menghapusnya.`}
+        description={`Ketik nama barang "${deleteTarget?.namaBarang || ""}" untuk menghapusnya.`}
       />
     </>
   );

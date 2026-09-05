@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate, Link } from "react-router-dom";
 import { Save, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 interface MutasiStokFormProps {
   unitBarangs: { id: number; kodeBarang: string; namaBarang: string }[];
 }
 
 export default function MutasiStokForm({ unitBarangs }: MutasiStokFormProps) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     unitBarangId: "",
     tipe: "MASUK",
@@ -33,8 +32,7 @@ export default function MutasiStokForm({ unitBarangs }: MutasiStokFormProps) {
       });
 
       if (res.ok) {
-        router.push("/mutasi-stok");
-        router.refresh();
+        navigate("/mutasi-stok?success=Mutasi stok berhasil ditambahkan");
       } else {
         const data = await res.json();
         setError(data.error || "Terjadi kesalahan");
@@ -50,7 +48,7 @@ export default function MutasiStokForm({ unitBarangs }: MutasiStokFormProps) {
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link
-          href="/mutasi-stok"
+          to="/mutasi-stok"
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -145,7 +143,7 @@ export default function MutasiStokForm({ unitBarangs }: MutasiStokFormProps) {
               {loading ? "Menyimpan..." : "Simpan"}
             </button>
             <Link
-              href="/mutasi-stok"
+              to="/mutasi-stok"
               className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-lg transition-colors"
             >
               Batal

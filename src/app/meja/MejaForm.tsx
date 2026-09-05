@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate, Link } from "react-router-dom";
 import { Save, ArrowLeft } from "lucide-react";
-import Link from "next/link";
 
 interface MejaFormProps {
   initialData?: {
@@ -17,11 +16,10 @@ interface MejaFormProps {
 }
 
 export default function MejaForm({ initialData, ruangLabs, assignedLabIds, userRole }: MejaFormProps) {
-  // Filter labs based on role
   const availableRuangLabs = userRole === "admin"
     ? ruangLabs
     : ruangLabs.filter((rl) => assignedLabIds.includes(rl.id));
-  const router = useRouter();
+  const navigate = useNavigate();
   const [meja, setMeja] = useState(initialData?.meja || "");
   const [ruangLabId, setRuangLabId] = useState(initialData?.ruangLabId?.toString() || "");
   const [loading, setLoading] = useState(false);
@@ -43,8 +41,7 @@ export default function MejaForm({ initialData, ruangLabs, assignedLabIds, userR
       });
 
       if (res.ok) {
-        router.push("/meja");
-        router.refresh();
+        navigate(initialData ? "/meja?success=Meja berhasil diupdate" : "/meja?success=Meja berhasil ditambahkan");
       } else {
         const data = await res.json();
         setError(data.error || "Terjadi kesalahan");
@@ -60,7 +57,7 @@ export default function MejaForm({ initialData, ruangLabs, assignedLabIds, userR
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <Link
-          href="/meja"
+          to="/meja"
           className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -121,7 +118,7 @@ export default function MejaForm({ initialData, ruangLabs, assignedLabIds, userR
               {loading ? "Menyimpan..." : "Simpan"}
             </button>
             <Link
-              href="/meja"
+              to="/meja"
               className="px-4 py-2.5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 font-medium rounded-lg transition-colors"
             >
               Batal

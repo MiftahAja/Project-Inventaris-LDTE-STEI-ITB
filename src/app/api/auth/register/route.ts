@@ -12,20 +12,23 @@ export async function POST(req: NextRequest) {
     const confirmPassword = formData.get("confirmPassword") as string;
 
     if (!name || !email || !password) {
-      return NextResponse.redirect(
-        new URL("/register?error=Semua field harus diisi", req.url)
+      return NextResponse.json(
+        { error: "Semua field harus diisi" },
+        { status: 400 }
       );
     }
 
     if (password !== confirmPassword) {
-      return NextResponse.redirect(
-        new URL("/register?error=Password tidak cocok", req.url)
+      return NextResponse.json(
+        { error: "Password tidak cocok" },
+        { status: 400 }
       );
     }
 
     if (password.length < 6) {
-      return NextResponse.redirect(
-        new URL("/register?error=Password harus minimal 6 karakter", req.url)
+      return NextResponse.json(
+        { error: "Password harus minimal 6 karakter" },
+        { status: 400 }
       );
     }
 
@@ -35,8 +38,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingUser) {
-      return NextResponse.redirect(
-        new URL("/register?error=Email sudah terdaftar", req.url)
+      return NextResponse.json(
+        { error: "Email sudah terdaftar" },
+        { status: 409 }
       );
     }
 
@@ -56,11 +60,12 @@ export async function POST(req: NextRequest) {
     // Create session
     await createSession(Number(user.id), user.role);
 
-    return NextResponse.redirect(new URL("/home", req.url));
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Register error:", error);
-    return NextResponse.redirect(
-      new URL("/register?error=Terjadi kesalahan server", req.url)
+    return NextResponse.json(
+      { error: "Terjadi kesalahan server" },
+      { status: 500 }
     );
   }
 }

@@ -1,8 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Settings } from "lucide-react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 interface RuangLab {
   id: number;
@@ -17,8 +16,6 @@ interface AssignmentClientProps {
 }
 
 export default function AssignmentClient({ ruangLabs }: AssignmentClientProps) {
-  const router = useRouter();
-
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
       <div className="overflow-x-auto">
@@ -87,7 +84,7 @@ export default function AssignmentClient({ ruangLabs }: AssignmentClientProps) {
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Link
-                    href={`/assignments/ruang-lab/${rl.id}`}
+                    to={`/assignments/ruang-lab/${rl.id}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors"
                   >
                     <Settings className="w-3.5 h-3.5" />
