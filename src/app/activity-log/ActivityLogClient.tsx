@@ -64,7 +64,7 @@ export default function ActivityLogClient({ logs, totalItems, currentPage, onPag
       totalItems={totalItems}
       currentPage={currentPage}
       onPageChange={onPageChange}
-      pageSizeOptions={[10, 20, 50, 100]}
+      pageSizeOptions={[10, 20, 50]}
       onPageSizeChange={(size) => onPageChange?.(1)}
     />
   );

@@ -9,8 +9,8 @@ export default function MejaPage() {
   const { user } = useAuth();
   const [mejas, setMejas] = useState<{ id: number; meja: string; ruangLab: string; ruangLabId: number; barangCount: number }[]>([]);
   const [total, setTotal] = useState(0);
-  const [unitBarangByMeja, setUnitBarangByMeja] = useState<Record<number, { id: number; kodeBarang: string; namaBarang: string; kondisiBarang: string; status: string }[]>>({});
   const [assignedLabIds, setAssignedLabIds] = useState<number[]>([]);
+  const [ruangLabOptions, setRuangLabOptions] = useState<{ id: number; namaRuang: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +34,10 @@ export default function MejaPage() {
         })));
         setTotal(mejaData.total);
         setAssignedLabIds(assignedLabsData.labIds || []);
+        setRuangLabOptions(ruangLabData.data.map((rl: { id: number; namaRuang: string }) => ({
+          id: Number(rl.id),
+          namaRuang: rl.namaRuang,
+        })));
       } catch (error) {
         console.error("Error:", error);
       } finally {
@@ -58,9 +62,9 @@ export default function MejaPage() {
       <MejaClient
         initialMejas={mejas}
         initialTotal={total}
-        unitBarangByMeja={unitBarangByMeja}
         userRole={user?.role || ""}
         assignedLabIds={assignedLabIds}
+        ruangLabOptions={ruangLabOptions}
       />
     </AuthLayout>
   );

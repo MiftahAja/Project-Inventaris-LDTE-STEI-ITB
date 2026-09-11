@@ -87,6 +87,7 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
         totalItems={total}
         currentPage={page}
         onPageChange={handlePageChange}
+        pageSizeOptions={[10, 20, 50]}
         itemsPerPage={pageSize}
       />
       {successMessage && (

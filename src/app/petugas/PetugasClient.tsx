@@ -98,6 +98,7 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
         totalItems={total}
         currentPage={page}
         onPageChange={handlePageChange}
+        pageSizeOptions={[10, 20, 50]}
         itemsPerPage={pageSize}
       />
       <ConfirmDeleteModal

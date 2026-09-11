@@ -1,14 +1,18 @@
-import { getRedis } from "./redis";
+// In-memory cache for serverless (no Redis needed)
+// Each serverless function instance gets its own cache
+// Cache is cleared when the instance is recycled
+
+const cache = new Map<string, { value: unknown; expiry: number }>();
 
 // Cache TTL constants (in seconds)
 export const CACHE_TTL = {
-  SHORT: 30, // 30 seconds - for frequently changing data
-  MEDIUM: 60, // 1 minute - for moderately changing data
-  LONG: 300, // 5 minutes - for rarely changing data
-  HOUR: 3600, // 1 hour - for static data
+  SHORT: 30,
+  MEDIUM: 60,
+  LONG: 300,
+  HOUR: 3600,
 } as const;
 
-// Cache key prefixes for organization
+// Cache key prefixes
 export const CACHE_KEYS = {
   RUANG_LAB: "ruang-lab",
   MEJA: "meja",
@@ -20,76 +24,51 @@ export const CACHE_KEYS = {
   DASHBOARD: "dashboard",
 } as const;
 
-interface CacheOptions {
-  ttl?: number;
-  prefix?: string;
-}
-
 /**
- * Get a value from cache
+ * Get value from in-memory cache
  */
 export async function getCache<T>(key: string): Promise<T | null> {
-  const redis = getRedis();
-  if (!redis) return null;
+  const entry = cache.get(key);
+  if (!entry) return null;
 
-  try {
-    const data = await redis.get(key);
-    if (!data) return null;
-
-    return JSON.parse(data) as T;
-  } catch (error) {
-    console.error(`[Cache] Get error for key "${key}":`, error);
+  if (Date.now() > entry.expiry) {
+    cache.delete(key);
     return null;
   }
+
+  return entry.value as T;
 }
 
 /**
- * Set a value in cache with TTL
+ * Set value in in-memory cache with TTL
  */
 export async function setCache<T>(
   key: string,
   value: T,
   ttl: number = CACHE_TTL.SHORT
 ): Promise<void> {
-  const redis = getRedis();
-  if (!redis) return;
-
-  try {
-    const serialized = JSON.stringify(value);
-    await redis.setex(key, ttl, serialized);
-  } catch (error) {
-    console.error(`[Cache] Set error for key "${key}":`, error);
-  }
+  cache.set(key, {
+    value,
+    expiry: Date.now() + ttl * 1000,
+  });
 }
 
 /**
  * Delete a specific cache key
  */
 export async function deleteCache(key: string): Promise<void> {
-  const redis = getRedis();
-  if (!redis) return;
-
-  try {
-    await redis.del(key);
-  } catch (error) {
-    console.error(`[Cache] Delete error for key "${key}":`, error);
-  }
+  cache.delete(key);
 }
 
 /**
- * Delete multiple cache keys matching a pattern
+ * Delete multiple cache keys matching a prefix
  */
 export async function deleteCachePattern(pattern: string): Promise<void> {
-  const redis = getRedis();
-  if (!redis) return;
-
-  try {
-    const keys = await redis.keys(pattern);
-    if (keys.length > 0) {
-      await redis.del(...keys);
+  const prefix = pattern.replace("*", "");
+  for (const key of cache.keys()) {
+    if (key.startsWith(prefix)) {
+      cache.delete(key);
     }
-  } catch (error) {
-    console.error(`[Cache] Delete pattern error for "${pattern}":`, error);
   }
 }
 
@@ -101,29 +80,21 @@ export async function getOrSetCache<T>(
   fetchFn: () => Promise<T>,
   ttl: number = CACHE_TTL.SHORT
 ): Promise<T> {
-  // Try to get from cache first
   const cached = await getCache<T>(key);
   if (cached !== null) {
     return cached;
   }
 
-  // Fetch fresh data
   const data = await fetchFn();
-
-  // Store in cache
   await setCache(key, data, ttl);
-
   return data;
 }
 
 /**
  * Invalidate all cache entries for a specific entity type
- * e.g., invalidateEntityCache("ruang-lab") clears all ruang-lab related caches
  */
-export async function invalidateEntityCache(
-  entityType: string
-): Promise<void> {
-  await deleteCachePattern(`${entityType}:*`);
+export async function invalidateEntityCache(entityType: string): Promise<void> {
+  await deleteCachePattern(`${entityType}:`);
 }
 
 /**
@@ -134,33 +105,15 @@ export function buildCacheKey(
   params?: Record<string, string | number | undefined>
 ): string {
   let key = prefix;
-
   if (params) {
     const sortedParams = Object.entries(params)
       .filter(([, value]) => value !== undefined)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}=${v}`)
       .join(":");
-
     if (sortedParams) {
       key += `:${sortedParams}`;
     }
   }
-
   return key;
-}
-
-/**
- * Check if Redis is available
- */
-export async function isRedisAvailable(): Promise<boolean> {
-  const redis = getRedis();
-  if (!redis) return false;
-
-  try {
-    await redis.ping();
-    return true;
-  } catch {
-    return false;
-  }
 }

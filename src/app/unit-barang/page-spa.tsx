@@ -14,7 +14,7 @@ export default function UnitBarangPage() {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
 
   const fetchData = async (page: number) => {
     setLoading(true);
@@ -91,7 +91,7 @@ export default function UnitBarangPage() {
         currentPage={currentPage}
         onPageChange={setCurrentPage}
         itemsPerPage={pageSize}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50]}
         onPageSizeChange={setPageSize}
       />
     </AuthLayout>

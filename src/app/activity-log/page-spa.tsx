@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import AuthLayout from "@/components/AuthLayout";
 import ActivityLogClient from "./ActivityLogClient";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 10;
 
 export default function ActivityLogPage() {
   const [pageSize, setPageSize] = useState(PAGE_SIZE);
@@ -57,7 +57,7 @@ export default function ActivityLogPage() {
         currentPage={currentPage}
         onPageChange={setCurrentPage}
         itemsPerPage={pageSize}
-        pageSizeOptions={[10, 20, 50, 100]}
+        pageSizeOptions={[10, 20, 50]}
         onPageSizeChange={setPageSize}
       />
     </AuthLayout>
