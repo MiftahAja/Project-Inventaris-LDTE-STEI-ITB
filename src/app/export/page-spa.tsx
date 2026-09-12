@@ -34,8 +34,6 @@ export default function ExportPage() {
           mejas: [], 
         }));
 
-        console.log("[EXPORT] fetched labs metadata", { total: labs.length });
-
         setRuangLabs(labs);
         setAssignedLabIds(assignedData.labIds || []);
       } catch (error) {

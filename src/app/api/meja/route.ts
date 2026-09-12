@@ -87,16 +87,31 @@ export async function GET(req: NextRequest) {
 
     let where: Record<string, unknown> = {};
 
+    // Filter by ruangLabId if provided
+    const ruangLabIdParam = searchParams.get("ruangLabId");
+    if (ruangLabIdParam) {
+      where.ruangLabId = BigInt(ruangLabIdParam);
+    }
+
     // Petugas only see mejas from their assigned labs
     if (session.role === "petugas") {
       const labIds = await getAssignedLabIds(Number(session.userId));
-      where = { ruangLabId: { in: labIds } };
+      if (ruangLabIdParam) {
+        // Ensure petugas can only see their assigned lab
+        const filterLabId = Number(ruangLabIdParam);
+        if (!labIds.includes(filterLabId)) {
+          where = { ...where, ruangLabId: { in: [] } };
+        }
+      } else {
+        where = { ...where, ruangLabId: { in: labIds.map(id => BigInt(id)) } };
+      }
     }
 
     // Build cache key based on user role and query parameters
     const cacheKey = buildCacheKey(CACHE_KEYS.MEJA, {
       role: session.role,
       userId: session.userId,
+      ruangLabId: ruangLabIdParam || undefined,
       page,
       pageSize,
     });

@@ -5,6 +5,7 @@ import { logActivity } from "@/lib/activity-log";
 import {
   getOrSetCache,
   invalidateEntityCache,
+  buildCacheKey,
   CACHE_TTL,
   CACHE_KEYS,
 } from "@/lib/cache";
@@ -76,9 +77,11 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   try {
+    const cacheKey = buildCacheKey(CACHE_KEYS.ASSIGNMENTS, { all: 1 });
+
     // Use cache-aside pattern
     const data = await getOrSetCache(
-      CACHE_KEYS.ASSIGNMENTS,
+      cacheKey,
       async () => {
         return db.assignment.findMany({
           select: {

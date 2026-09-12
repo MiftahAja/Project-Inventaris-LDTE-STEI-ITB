@@ -97,16 +97,23 @@ export async function GET(req: NextRequest) {
 
     let where: Record<string, unknown> = {};
 
+    // Filter by mejaId if provided
+    const mejaIdParam = searchParams.get("mejaId");
+    if (mejaIdParam) {
+      where.mejaId = BigInt(mejaIdParam);
+    }
+
     // Petugas only see unit barangs from their assigned labs
     if (session.role === "petugas") {
       const labIds = await getAssignedLabIds(Number(session.userId));
-      where = { ruangLabId: { in: labIds } };
+      where = { ...where, ruangLabId: { in: labIds } };
     }
 
     // Build cache key based on user role and query parameters
     const cacheKey = buildCacheKey(CACHE_KEYS.UNIT_BARANG, {
       role: session.role,
       userId: session.userId,
+      mejaId: mejaIdParam || undefined,
       page,
       pageSize,
     });

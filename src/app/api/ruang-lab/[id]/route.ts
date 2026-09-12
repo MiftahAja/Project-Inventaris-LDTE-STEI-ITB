@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logActivity } from "@/lib/activity-log";
+import { invalidateEntityCache, CACHE_KEYS } from "@/lib/cache";
 
 export async function PUT(
   req: NextRequest,
@@ -17,6 +18,13 @@ export async function PUT(
       where: { id: BigInt(id) },
       data: { namaRuang, deskripsi: deskripsi || null },
     });
+
+    // Invalidate ruang-lab and related caches after mutation
+    await Promise.all([
+      invalidateEntityCache(CACHE_KEYS.RUANG_LAB),
+      invalidateEntityCache(CACHE_KEYS.MEJA),
+      invalidateEntityCache(CACHE_KEYS.UNIT_BARANG),
+    ]);
 
     await logActivity({
       logName: "ruang_lab",
@@ -53,6 +61,13 @@ export async function DELETE(
     await db.ruangLab.delete({
       where: { id: BigInt(id) },
     });
+
+    // Invalidate ruang-lab and related caches after mutation
+    await Promise.all([
+      invalidateEntityCache(CACHE_KEYS.RUANG_LAB),
+      invalidateEntityCache(CACHE_KEYS.MEJA),
+      invalidateEntityCache(CACHE_KEYS.UNIT_BARANG),
+    ]);
 
     await logActivity({
       logName: "ruang_lab",

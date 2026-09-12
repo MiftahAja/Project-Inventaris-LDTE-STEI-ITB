@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { logActivity } from "@/lib/activity-log";
+import { invalidateEntityCache, CACHE_KEYS } from "@/lib/cache";
 
 export async function GET(
   req: NextRequest,
@@ -58,6 +59,9 @@ export async function DELETE(
       where: { id: BigInt(id) },
       data: { isActive: false },
     });
+
+    // Invalidate assignments cache after mutation
+    await invalidateEntityCache(CACHE_KEYS.ASSIGNMENTS);
 
     await logActivity({
       logName: "assignment",

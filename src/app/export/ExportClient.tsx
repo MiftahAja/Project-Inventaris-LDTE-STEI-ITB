@@ -124,7 +124,6 @@ export default function ExportClient({ ruangLabs, userRole, assignedLabIds }: Ex
 
       const XLSX = await import("xlsx");
       const data = getExportData(labData);
-      console.log("[EXPORT] per lab (dari server)", { labId: lab.id, labNama: lab.namaRuang, rowCount: data.length, sample: data[0] });
 
       const wb = await createWorkbook(XLSX, data, lab.namaRuang);
       const filename = `Export_${lab.namaRuang.replace(/\s+/g, "_")}_${getDateStr()}.xlsx`;

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
 import SuccessNotification from "@/components/SuccessNotification";
-import { Package, X } from "lucide-react";
+import { Package, X, Filter } from "lucide-react";
 interface UnitBarang {
   id: number;
   kodeBarang: string;
@@ -48,15 +48,29 @@ export default function MejaClient({
   const [selectedMeja, setSelectedMeja] = useState<Meja | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Meja | null>(null);
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
   const successMessage = searchParams.get("success");
+
+  const [ruangLabFilter, setRuangLabFilter] = useState<number | "">(assignedLabIds.length > 0 && ruangLabOptions.find((rl) => assignedLabIds.includes(rl.id)) ? assignedLabIds[0] : "");
+
+  // Petugas hanya melihat lab yang ditugaskan
+  const filteredRuLabOptions = userRole === "admin"
+    ? ruangLabOptions
+    : ruangLabOptions.filter((rl) => assignedLabIds.includes(rl.id));
 
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = 10;
 
-  const fetchData = useCallback(async (page: number) => {
+  const isInitialMount = useRef(true);
+
+  const fetchData = useCallback(async (pageNum: number, labId?: number | "") => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/meja?page=${page}&pageSize=${pageSize}`);
+      let url = `/api/meja?page=${pageNum}&pageSize=${pageSize}`;
+      if (labId) {
+        url += `&ruangLabId=${labId}`;
+      }
+      const response = await fetch(url);
       const result = await response.json();
       setMejas(result.data);
       setTotal(result.total);
@@ -68,8 +82,12 @@ export default function MejaClient({
   }, []);
 
   useEffect(() => {
-    fetchData(page);
-  }, [page, fetchData]);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    fetchData(page, ruangLabFilter);
+  }, [page, ruangLabFilter, fetchData]);
 
   const handlePageChange = (newPage: number) => {
     navigate(`/meja?page=${newPage}`);
@@ -84,41 +102,20 @@ export default function MejaClient({
     try {
       await fetch(`/api/meja/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
-      fetchData(page);
+      setDeleteSuccessMsg(`Meja "${deleteTarget.meja}" berhasil dihapus`);
+      fetchData(page, ruangLabFilter);
     } catch (error) {
       console.error("Delete error:", error);
     }
   };
 
-  const [ruangLabFilter, setRuangLabFilter] = useState<number | "">(assignedLabIds.length > 0 && ruangLabOptions.find((rl) => assignedLabIds.includes(rl.id)) ? assignedLabIds[0] : "");
-  const [mejasById, setMejasById] = useState<Record<number, Meja[]>>({});
-  const [filteredMejas, setFilteredMejas] = useState<Meja[]>(initialMejas);
-
-  const loadMejasByRuangLab = useCallback(async (ruangLabId: number) => {
-    try {
-      const response = await fetch(`/api/meja?ruangLabId=${ruangLabId}`);
-      const result = await response.json();
-      setMejasById((prev) => (prev[ruangLabId] = result.data || []));
-    } catch (error) {
-      console.error("Error loading mejas:", error);
+  const handleRuangLabFilterChange = (newFilter: number | "") => {
+    setRuangLabFilter(newFilter);
+    // Reset to page 1 when filter changes
+    if (page !== 1) {
+      navigate(`/meja?page=1`);
     }
-  }, []);
-
-  useEffect(() => {
-    if (ruangLabFilter) {
-      loadMejasByRuangLab(ruangLabFilter);
-    }
-  }, [ruangLabFilter]);
-
-  useEffect(() => {
-    if (ruangLabFilter && mejasById[ruangLabFilter]) {
-      setFilteredMejas(mejasById[ruangLabFilter]);
-      setTotal(mejasById[ruangLabFilter].length);
-    } else {
-      setFilteredMejas(initialMejas);
-      setTotal(initialTotal);
-    }
-  }, [ruangLabFilter, mejasById, initialMejas, initialTotal]);
+  };
 
   const handleViewBarang = (item: Meja) => {
     setSelectedMeja(item);
@@ -157,23 +154,42 @@ export default function MejaClient({
           }}
         />
       )}
-      <div className="flex flex-wrap items-center gap-3 mb-4">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter Ruang Lab</label>
-        <select
-          value={ruangLabFilter || ""}
-          onChange={(e) => setRuangLabFilter(e.target.value ? Number(e.target.value) : "")}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-lg text-sm"
-        >
-          <option value="">Semua</option>
-          {ruangLabOptions.map((rl) => (
-            <option key={rl.id} value={rl.id}>
-              {rl.namaRuang}
-            </option>
-          ))}
-        </select>
+      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 p-4 animate-slide-up">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter</span>
+          <div className="ml-auto flex items-center gap-2">
+            {ruangLabFilter !== "" && (
+              <button
+                onClick={() => handleRuangLabFilterChange("")}
+                className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600 btn-press"
+              >
+                <X className="w-3 h-3" />
+                Reset
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Ruang Lab</label>
+            <select
+              value={ruangLabFilter}
+              onChange={(e) => handleRuangLabFilterChange(e.target.value ? Number(e.target.value) : "")}
+              className="w-full px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
+            >
+              <option value="">Semua Ruang Lab</option>
+              {filteredRuLabOptions.map((rl) => (
+                <option key={rl.id} value={rl.id}>
+                  {rl.namaRuang}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
       </div>
       <DataTable
-        data={filteredMejas}
+        data={mejas}
         columns={[
           { key: "meja", label: "Nomor Meja" },
           { key: "ruangLab", label: "Ruang Lab" },
@@ -188,6 +204,8 @@ export default function MejaClient({
           },
         ]}
         title="Daftar Meja"
+        addHref={canWrite ? "/meja/create" : undefined}
+        addLabel="Tambah Meja"
         searchPlaceholder="Cari nomor meja..."
         searchKey="meja"
         onEdit={canWrite ? handleEdit : undefined}
@@ -200,6 +218,12 @@ export default function MejaClient({
         itemsPerPage={pageSize}
       />
 
+      {deleteSuccessMsg && (
+        <SuccessNotification
+          message={deleteSuccessMsg}
+          onDismiss={() => setDeleteSuccessMsg(null)}
+        />
+      )}
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}

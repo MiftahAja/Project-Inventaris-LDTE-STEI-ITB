@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = Math.min(parseInt(searchParams.get("pageSize") || "20"), 100);
-    const skip = (page - 1) * pageSize;    console.log("[ACT] IN page, pageSize, skip", { page, pageSize, skip });
+    const skip = (page - 1) * pageSize;
 
     const [logs, total] = await Promise.all([
       db.activityLog.findMany({
@@ -22,8 +22,6 @@ export async function GET(req: NextRequest) {
       }),
       db.activityLog.count(),
     ]);
-
-    console.log("[ACT] AFTER db call", { logsLen: logs.length, total });
 
     const data = logs.map((log) => ({
       id: Number(log.id),

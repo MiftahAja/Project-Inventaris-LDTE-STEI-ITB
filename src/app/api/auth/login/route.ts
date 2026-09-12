@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { createSession } from "@/lib/session";
+import { logActivity } from "@/lib/activity-log";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,6 +37,16 @@ export async function POST(req: NextRequest) {
     }
 
     await createSession(Number(user.id), user.role);
+
+    // Log login activity
+    logActivity({
+      logName: "auth",
+      description: `${user.name} berhasil login`,
+      subjectType: "User",
+      subjectId: Number(user.id),
+      event: "login",
+      causerId: Number(user.id),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

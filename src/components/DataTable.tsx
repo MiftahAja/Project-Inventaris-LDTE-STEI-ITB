@@ -58,9 +58,6 @@ export default function DataTable<T extends Record<string, any>>({
   const isServerSide = totalItems !== undefined && currentPage !== undefined && onPageChange !== undefined;
   const enablePaginationControls = isServerSide && itemsPerPage > 0;
 
-  console.log("[DT] isServerSide, totalItems, currentPage, itemsPerPage, enablePaginationControls",
-    { isServerSide, totalItems, currentPage, itemsPerPage, enablePaginationControls });
-
   const filtered = searchKey && !isServerSide
     ? data.filter((item) =>
         String(item[searchKey]).toLowerCase().includes(search.toLowerCase())
@@ -218,7 +215,6 @@ export default function DataTable<T extends Record<string, any>>({
                 value={itemsPerPage}
                 onChange={(e) => {
                   const size = Number(e.target.value);
-                  itemsPerPage = size;
                   onPageSizeChange?.(size);
                 }}
                 className="ml-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 py-1 px-2 focus:ring-2 focus:ring-blue-500"

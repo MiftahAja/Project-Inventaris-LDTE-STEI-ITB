@@ -44,6 +44,7 @@ interface UnitBarangClientProps {
   itemsPerPage?: number;
   pageSizeOptions?: number[];
   onPageSizeChange?: (size: number) => void;
+  onRefresh?: () => void;
 }
 
 export default function UnitBarangClient({
@@ -58,6 +59,7 @@ export default function UnitBarangClient({
   itemsPerPage,
   pageSizeOptions,
   onPageSizeChange,
+  onRefresh,
 }: UnitBarangClientProps) {
   const navigate = useNavigate();
   const canWrite = userRole === "admin" || assignedLabIds.length > 0;
@@ -66,6 +68,7 @@ export default function UnitBarangClient({
   const [filterMeja, setFilterMeja] = useState<number | "">("");
   const [searchParams] = useSearchParams();
   const [deleteTarget, setDeleteTarget] = useState<UnitBarang | null>(null);
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
   const successMessage = searchParams.get("success");
 
   const availableMejas = filterRuangLab !== ""
@@ -87,7 +90,8 @@ export default function UnitBarangClient({
     try {
       await fetch(`/api/unit-barang/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
-      window.location.reload();
+      setDeleteSuccessMsg(`Unit barang "${deleteTarget.kodeBarang}" berhasil dihapus`);
+      onRefresh?.();
     } catch (error) {
       console.error("Delete error:", error);
     }
@@ -222,6 +226,12 @@ export default function UnitBarangClient({
         pageSizeOptions={pageSizeOptions}
         onPageSizeChange={onPageSizeChange}
       />
+      {deleteSuccessMsg && (
+        <SuccessNotification
+          message={deleteSuccessMsg}
+          onDismiss={() => setDeleteSuccessMsg(null)}
+        />
+      )}
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}

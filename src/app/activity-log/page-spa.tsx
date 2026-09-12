@@ -18,7 +18,6 @@ export default function ActivityLogPage() {
     try {
       const res = await fetch(`/api/activity-log?page=${page}&pageSize=${pageSize}`);
       const data = await res.json();
-      console.log("[ACT] api res", { page, pageSize, hasData: Array.isArray(data?.data), total: data?.total });
       setLogs((data.data || data || []).map((log: Record<string, unknown>) => ({
         id: Number(log.id),
         logName: (log.logName as string) || "-",

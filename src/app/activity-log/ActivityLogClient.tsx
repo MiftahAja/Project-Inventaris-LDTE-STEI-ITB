@@ -23,11 +23,6 @@ interface ActivityLogClientProps {
 }
 
 export default function ActivityLogClient({ logs, totalItems, currentPage, onPageChange, itemsPerPage }: ActivityLogClientProps) {
-  console.log("[ACT] client props", { totalItems, currentPage, itemsPerPage, logsLen: logs?.length });
-
-  if (!onPageChange) {
-    console.warn("[ACT] onPageChange belum ada");
-  }
 
   return (
     <DataTable

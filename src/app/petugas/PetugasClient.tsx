@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
@@ -27,15 +27,18 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
   const successMessage = searchParams.get("success");
 
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = 10;
 
-  const fetchData = useCallback(async (page: number) => {
+  const isInitialMount = useRef(true);
+
+  const fetchData = useCallback(async (pageNum: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/petugas?page=${page}&pageSize=${pageSize}`);
+      const response = await fetch(`/api/petugas?page=${pageNum}&pageSize=${pageSize}`);
       const result = await response.json();
       setUsers(result.data);
       setTotal(result.total);
@@ -47,6 +50,10 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
   }, []);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     fetchData(page);
   }, [page, fetchData]);
 
@@ -63,6 +70,7 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
     try {
       await fetch(`/api/petugas/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
+      setDeleteSuccessMsg(`Petugas "${deleteTarget.name}" berhasil dihapus`);
       fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
@@ -101,6 +109,12 @@ export default function PetugasClient({ initialUsers, initialTotal }: PetugasCli
         pageSizeOptions={[10, 20, 50]}
         itemsPerPage={pageSize}
       />
+      {deleteSuccessMsg && (
+        <SuccessNotification
+          message={deleteSuccessMsg}
+          onDismiss={() => setDeleteSuccessMsg(null)}
+        />
+      )}
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}

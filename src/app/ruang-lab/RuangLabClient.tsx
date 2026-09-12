@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
@@ -28,15 +28,18 @@ export default function RuangLabClient({ initialRuangLabs, initialTotal, userRol
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<RuangLab | null>(null);
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
   const successMessage = searchParams.get("success");
 
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = 10;
 
-  const fetchData = useCallback(async (page: number) => {
+  const isInitialMount = useRef(true);
+
+  const fetchData = useCallback(async (pageNum: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/ruang-lab?page=${page}&pageSize=${pageSize}`);
+      const response = await fetch(`/api/ruang-lab?page=${pageNum}&pageSize=${pageSize}`);
       const result = await response.json();
       setRuangLabs(result.data);
       setTotal(result.total);
@@ -48,6 +51,10 @@ export default function RuangLabClient({ initialRuangLabs, initialTotal, userRol
   }, []);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     fetchData(page);
   }, [page, fetchData]);
 
@@ -64,6 +71,7 @@ export default function RuangLabClient({ initialRuangLabs, initialTotal, userRol
     try {
       await fetch(`/api/ruang-lab/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
+      setDeleteSuccessMsg(`Ruang lab "${deleteTarget.namaRuang}" berhasil dihapus`);
       fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
@@ -111,6 +119,12 @@ export default function RuangLabClient({ initialRuangLabs, initialTotal, userRol
         pageSizeOptions={[10, 20, 50]}
         itemsPerPage={pageSize}
       />
+      {deleteSuccessMsg && (
+        <SuccessNotification
+          message={deleteSuccessMsg}
+          onDismiss={() => setDeleteSuccessMsg(null)}
+        />
+      )}
       <ConfirmDeleteModal
         isOpen={deleteTarget !== null}
         onClose={() => setDeleteTarget(null)}

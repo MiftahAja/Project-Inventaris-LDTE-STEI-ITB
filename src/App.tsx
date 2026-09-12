@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
-import ThemeScript from "@/components/ThemeScript";
 
 // Pages
 import LoginPage from "@/app/login/LoginClient";
@@ -117,7 +116,6 @@ function AppRoutes() {
 export default function App() {
   return (
     <>
-      <ThemeScript />
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>

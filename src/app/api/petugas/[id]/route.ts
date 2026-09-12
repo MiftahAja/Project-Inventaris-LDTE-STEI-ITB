@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { logActivity } from "@/lib/activity-log";
+import { invalidateEntityCache, CACHE_KEYS } from "@/lib/cache";
 
 export async function PUT(
   req: NextRequest,
@@ -23,6 +24,9 @@ export async function PUT(
       where: { id: BigInt(id) },
       data: updateData,
     });
+
+    // Invalidate petugas cache after mutation
+    await invalidateEntityCache(CACHE_KEYS.PETUGAS);
 
     await logActivity({
       logName: "petugas",
@@ -59,6 +63,9 @@ export async function DELETE(
     await db.user.delete({
       where: { id: BigInt(id) },
     });
+
+    // Invalidate petugas cache after mutation
+    await invalidateEntityCache(CACHE_KEYS.PETUGAS);
 
     await logActivity({
       logName: "petugas",

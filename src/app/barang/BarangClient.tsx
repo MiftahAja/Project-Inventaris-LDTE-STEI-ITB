@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import DataTable from "@/components/DataTable";
 import ConfirmDeleteModal from "@/components/ConfirmDeleteModal";
@@ -28,14 +28,17 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
   const [barangs, setBarangs] = useState<Barang[]>(initialBarangs);
   const [total, setTotal] = useState(initialTotal);
   const [loading, setLoading] = useState(false);
+  const [deleteSuccessMsg, setDeleteSuccessMsg] = useState<string | null>(null);
 
   const page = parseInt(searchParams.get("page") || "1");
   const pageSize = 10;
 
-  const fetchData = useCallback(async (page: number) => {
+  const isInitialMount = useRef(true);
+
+  const fetchData = useCallback(async (pageNum: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/barang?page=${page}&pageSize=${pageSize}`);
+      const response = await fetch(`/api/barang?page=${pageNum}&pageSize=${pageSize}`);
       const result = await response.json();
       setBarangs(result.data);
       setTotal(result.total);
@@ -47,6 +50,10 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
   }, []);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     fetchData(page);
   }, [page, fetchData]);
 
@@ -63,6 +70,7 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
     try {
       await fetch(`/api/barang/${deleteTarget.id}`, { method: "DELETE" });
       setDeleteTarget(null);
+      setDeleteSuccessMsg(`Barang "${deleteTarget.namaBarang}" berhasil dihapus`);
       fetchData(page);
     } catch (error) {
       console.error("Delete error:", error);
@@ -98,6 +106,12 @@ export default function BarangClient({ initialBarangs, initialTotal, userRole }:
             params.delete("success");
             navigate(`/barang?${params.toString()}`, { replace: true });
           }}
+        />
+      )}
+      {deleteSuccessMsg && (
+        <SuccessNotification
+          message={deleteSuccessMsg}
+          onDismiss={() => setDeleteSuccessMsg(null)}
         />
       )}
       <ConfirmDeleteModal

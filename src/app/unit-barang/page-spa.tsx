@@ -16,18 +16,45 @@ export default function UnitBarangPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
-  const fetchData = async (page: number) => {
-    setLoading(true);
+  // Fetch statis sekali saja (labs, mejas, assignedLabs)
+  const [staticLoaded, setStaticLoaded] = useState(false);
+
+  const fetchStaticData = async () => {
     try {
-      const [ubRes, rlRes, mejaRes, assignedLabsRes] = await Promise.all([
-        fetch(`/api/unit-barang?page=${page}&pageSize=${pageSize}`),
+      const [rlRes, mejaRes, assignedLabsRes] = await Promise.all([
         fetch("/api/ruang-lab?page=1&pageSize=100"),
         fetch("/api/meja?page=1&pageSize=100"),
         fetch("/api/auth/assigned-labs"),
       ]);
-      const ubData = await ubRes.json();
       const rlData = await rlRes.json();
       const mejaData = await mejaRes.json();
+      const assignedLabsData = await assignedLabsRes.json();
+
+      setRuangLabs(rlData.data.map((rl: { id: number; namaRuang: string }) => ({
+        id: Number(rl.id),
+        namaRuang: rl.namaRuang,
+      })));
+
+      setMejas(mejaData.data.map((m: { id: number; meja: string; ruangLabId: number; namaRuang: string }) => ({
+        id: Number(m.id),
+        meja: m.meja,
+        ruangLabId: Number(m.ruangLabId),
+        namaRuang: m.namaRuang,
+      })));
+
+      setAssignedLabIds(assignedLabsData.labIds || []);
+      setStaticLoaded(true);
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
+
+  // Fetch data paginated setiap ganti halaman
+  const fetchPageData = async (page: number) => {
+    setLoading(true);
+    try {
+      const ubRes = await fetch(`/api/unit-barang?page=${page}&pageSize=${pageSize}`);
+      const ubData = await ubRes.json();
 
       setUnitBarangs(ubData.data.map((ub: Record<string, unknown>) => ({
         id: Number(ub.id),
@@ -42,21 +69,6 @@ export default function UnitBarangPage() {
         barangId: Number(ub.barangId),
       })));
 
-      setRuangLabs(rlData.data.map((rl: { id: number; namaRuang: string }) => ({
-        id: Number(rl.id),
-        namaRuang: rl.namaRuang,
-      })));
-
-      setMejas(mejaData.data.map((m: { id: number; meja: string; ruangLabId: number; namaRuang: string }) => ({
-        id: Number(m.id),
-        meja: m.meja,
-        ruangLabId: Number(m.ruangLabId),
-        namaRuang: m.namaRuang,
-      })));
-
-      const assignedLabsData = await assignedLabsRes.json();
-      setAssignedLabIds(assignedLabsData.labIds || []);
-
       setTotalItems(ubData.total ?? 0);
     } catch (error) {
       console.error("Error:", error);
@@ -65,9 +77,14 @@ export default function UnitBarangPage() {
     }
   };
 
+  // Load statis sekali, lalu fetch page data
   useEffect(() => {
-    fetchData(currentPage);
-  }, [currentPage, pageSize]);
+    if (!staticLoaded) {
+      fetchStaticData().then(() => fetchPageData(currentPage));
+    } else {
+      fetchPageData(currentPage);
+    }
+  }, [currentPage, pageSize, staticLoaded]);
 
   if (loading) {
     return (
@@ -93,6 +110,7 @@ export default function UnitBarangPage() {
         itemsPerPage={pageSize}
         pageSizeOptions={[10, 20, 50]}
         onPageSizeChange={setPageSize}
+        onRefresh={() => fetchPageData(currentPage)}
       />
     </AuthLayout>
   );

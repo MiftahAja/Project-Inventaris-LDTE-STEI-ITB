@@ -66,7 +66,7 @@ export async function deleteCache(key: string): Promise<void> {
 export async function deleteCachePattern(pattern: string): Promise<void> {
   const prefix = pattern.replace("*", "");
   for (const key of cache.keys()) {
-    if (key.startsWith(prefix)) {
+    if (key === prefix || key.startsWith(prefix + ":")) {
       cache.delete(key);
     }
   }
