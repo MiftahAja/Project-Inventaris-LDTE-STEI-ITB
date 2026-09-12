@@ -46,6 +46,7 @@ yarn-error.log*
 DESKRIPSI.md
 DEPLOYMENT.md
 SUSUNAN-DAN-ALUR-PROJECT.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
