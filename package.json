@@ -7,7 +7,7 @@
     "dev:api": "next dev --webpack -p 3000",
     "dev:spa": "vite",
     "dev:full": "concurrently \"pnpm dev:api\" \"pnpm dev:spa\"",
-    "build": "vite build && cp -r dist/assets public/assets && prisma generate && next build",
+    "build": "vite build && cp -r dist/assets public/assets && cp dist/index.html public/index.html && sed -i 's/ crossorigin//g' public/index.html && prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",

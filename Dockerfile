@@ -69,6 +69,9 @@ COPY --from=builder /app/.next/static ./.next/static
 # Copy public directory
 COPY --from=builder /app/public ./public
 
+# Copy Vite SPA dist (index.html + assets) for catch-all route
+COPY --from=builder /app/dist ./dist
+
 # Copy Prisma schema for runtime (if needed for migrations)
 COPY --from=builder /app/prisma ./prisma
 

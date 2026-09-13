@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inventaris LDTE</title>
+    <script>
+      (function() {
+        try {
+          var mode = localStorage.getItem('darkMode');
+          if (mode === 'true' || (mode === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" src="/assets/index-B-wqOA1a.js"></script>
+    <link rel="stylesheet" href="/assets/index-CbMoQ3IN.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
