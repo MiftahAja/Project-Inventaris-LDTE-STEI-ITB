@@ -52,10 +52,29 @@ export async function DELETE(
 
     const ruangLab = await db.ruangLab.findUnique({
       where: { id: BigInt(id) },
+      include: {
+        _count: { select: { mejas: true, unitBarangs: true, assignments: true } },
+      },
     });
 
     if (!ruangLab) {
       return NextResponse.json({ error: "Ruang lab tidak ditemukan" }, { status: 404 });
+    }
+
+    // Prevent deletion if lab still has related data
+    if (ruangLab._count.mejas > 0) {
+      return NextResponse.json(
+        { error: `Tidak dapat menghapus ruang lab karena masih memiliki ${ruangLab._count.mejas} meja. Hapus semua meja terlebih dahulu.` },
+        { status: 400 }
+      );
+    }
+
+    // Deactivate all active assignments for this lab before deleting
+    if (ruangLab._count.assignments > 0) {
+      await db.assignment.updateMany({
+        where: { ruangLabId: BigInt(id), isActive: true },
+        data: { isActive: false },
+      });
     }
 
     await db.ruangLab.delete({
@@ -67,6 +86,8 @@ export async function DELETE(
       invalidateEntityCache(CACHE_KEYS.RUANG_LAB),
       invalidateEntityCache(CACHE_KEYS.MEJA),
       invalidateEntityCache(CACHE_KEYS.UNIT_BARANG),
+      invalidateEntityCache(CACHE_KEYS.ASSIGNMENTS),
+      invalidateEntityCache(CACHE_KEYS.DASHBOARD),
     ]);
 
     await logActivity({

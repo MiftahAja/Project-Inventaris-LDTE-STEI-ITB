@@ -260,22 +260,22 @@ export default function Sidebar({ user, children }: SidebarProps) {
       {/* Main Content */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Mobile Navbar */}
-        <header className="flex items-center justify-between px-3 py-2.5 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 lg:hidden">
+        <header className="flex items-center justify-between px-2 py-2 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 lg:hidden">
           <button
             onClick={() => setMobileOpen(true)}
-            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
           >
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
             <img src="/logo.svg" alt="Logo LDTE" className="w-5 h-5" />
-            <span className="font-bold text-gray-900 dark:text-white">LDTE</span>
+            <span className="text-base font-bold text-gray-900 dark:text-white">LDTE</span>
           </div>
           <button
             onClick={toggleDarkMode}
-            className="p-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 btn-press"
           >
-            <span className="relative w-5 h-5">
+            <span className="relative flex items-center justify-center w-5 h-5">
               <Sun className={cn("w-5 h-5 absolute transition-all duration-300", darkMode ? "opacity-100 rotate-0" : "opacity-0 -rotate-90")} />
               <Moon className={cn("w-5 h-5 absolute transition-all duration-300", darkMode ? "opacity-0 rotate-90" : "opacity-100 rotate-0")} />
             </span>

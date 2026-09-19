@@ -134,7 +134,7 @@ export default function AssignmentClient({ ruangLabs }: AssignmentClientProps) {
                         {rl.petugas}
                       </span>
                     ) : (
-                      <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full">
+                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400 rounded-full">
                         Belum ditugaskan
                       </span>
                     )}
@@ -147,7 +147,7 @@ export default function AssignmentClient({ ruangLabs }: AssignmentClientProps) {
                           : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
                       }`}
                     >
-                      {rl.isActive ? "Aktif" : "Kosong"}
+                      {rl.isActive ? "Aktif" : "Tidak Aktif"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">

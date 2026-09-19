@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasourceUrl: process.env.DIRECT_URL,
+});
 
 async function main() {
   console.log("Mengosongkan database (hanya menyisakan akun admin)...\n");

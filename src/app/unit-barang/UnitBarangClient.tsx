@@ -81,6 +81,11 @@ export default function UnitBarangClient({
     return true;
   });
 
+  // When client-side filter is active, show filtered count for pagination
+  const displayTotal = (filterRuangLab !== "" || filterMeja !== "")
+    ? filteredUnitBarangs.length
+    : (totalItems ?? unitBarangs.length);
+
   const handleEdit = (item: UnitBarang) => { 
     navigate(`/unit-barang/edit/${item.id}`);
   };
@@ -219,7 +224,7 @@ export default function UnitBarangClient({
         searchKey="kodeBarang"
         onEdit={canWrite ? handleEdit : undefined}
         onDelete={canWrite ? (item) => setDeleteTarget(item) : undefined}
-        totalItems={totalItems}
+        totalItems={displayTotal}
         currentPage={currentPage}
         onPageChange={onPageChange}
         itemsPerPage={itemsPerPage}

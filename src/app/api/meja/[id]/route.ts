@@ -94,6 +94,7 @@ export async function DELETE(
 
     const meja = await db.meja.findUnique({
       where: { id: BigInt(id) },
+      include: { _count: { select: { unitBarangs: true } } },
     });
 
     if (!meja) {
@@ -106,14 +107,24 @@ export async function DELETE(
       return NextResponse.json({ error: "Tidak memiliki akses ke lab ini" }, { status: 403 });
     }
 
+    // Prevent deletion if meja still has unit barangs
+    if (meja._count.unitBarangs > 0) {
+      return NextResponse.json(
+        { error: `Tidak dapat menghapus meja karena masih memiliki ${meja._count.unitBarangs} unit barang. Pindahkan atau hapus unit barang terlebih dahulu.` },
+        { status: 400 }
+      );
+    }
+
     await db.meja.delete({
       where: { id: BigInt(id) },
     });
 
-    // Invalidate meja and ruang-lab cache after mutation
+    // Invalidate meja, ruang-lab, and related caches after mutation
     await Promise.all([
       invalidateEntityCache(CACHE_KEYS.MEJA),
       invalidateEntityCache(CACHE_KEYS.RUANG_LAB),
+      invalidateEntityCache(CACHE_KEYS.UNIT_BARANG),
+      invalidateEntityCache(CACHE_KEYS.DASHBOARD),
     ]);
 
     await logActivity({

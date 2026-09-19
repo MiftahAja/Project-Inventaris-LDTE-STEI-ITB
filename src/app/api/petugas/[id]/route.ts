@@ -54,18 +54,32 @@ export async function DELETE(
 
     const user = await db.user.findUnique({
       where: { id: BigInt(id) },
+      include: {
+        _count: { select: { assignments: true } },
+      },
     });
 
     if (!user) {
       return NextResponse.json({ error: "Petugas tidak ditemukan" }, { status: 404 });
     }
 
+    // Deactivate all active assignments before deleting user
+    if (user._count.assignments > 0) {
+      await db.assignment.updateMany({
+        where: { userId: BigInt(id), isActive: true },
+        data: { isActive: false },
+      });
+    }
+
     await db.user.delete({
       where: { id: BigInt(id) },
     });
 
-    // Invalidate petugas cache after mutation
-    await invalidateEntityCache(CACHE_KEYS.PETUGAS);
+    // Invalidate petugas and assignment caches after mutation
+    await Promise.all([
+      invalidateEntityCache(CACHE_KEYS.PETUGAS),
+      invalidateEntityCache(CACHE_KEYS.ASSIGNMENTS),
+    ]);
 
     await logActivity({
       logName: "petugas",
