@@ -1,34 +1,29 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { readFileSync } from "fs";
-import { join } from "path";
+import { NextRequest, NextResponse } from "next/server";
 
-// Cache HTML in memory for performance (avoid reading disk on every request)
 let cachedHtml: string | null = null;
 
-function getSpaHtml(): string {
+async function getSpaHtml(origin: string): Promise<string> {
   if (cachedHtml) return cachedHtml;
 
   try {
-    // Primary: read from public/ (available on all platforms)
-    cachedHtml = readFileSync(join(process.cwd(), "public", "index.html"), "utf-8");
-  } catch {
-    try {
-      // Fallback: read from dist/ (local dev)
-      cachedHtml = readFileSync(join(process.cwd(), "dist", "index.html"), "utf-8");
-    } catch {
-      // Last resort: minimal HTML
-      cachedHtml = `<!DOCTYPE html><html lang="id"><head><title>Inventaris LDTE</title></head><body><div id="root"></div><script>window.location.href="/login";</script></body></html>`;
+    const res = await fetch(`${origin}/index.html`, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+    });
+    if (res.ok) {
+      cachedHtml = await res.text();
+      return cachedHtml;
     }
+  } catch {
+    // fallback
   }
 
-  return cachedHtml;
+  // Minimal fallback HTML
+  return `<!DOCTYPE html><html lang="id"><head><title>Inventaris LDTE</title></head><body><div id="root"></div><script>window.location.href="/login";</script></body></html>`;
 }
 
-export function proxy(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // --- SKIP routes that should NOT be handled by the SPA ---
 
   // API routes → let Next.js handle them
   if (pathname.startsWith("/api/")) {
@@ -50,9 +45,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // --- SERVE SPA HTML for all other routes ---
-
-  const html = getSpaHtml();
+  // Serve SPA HTML for all other routes
+  const origin = request.nextUrl.origin;
+  const html = await getSpaHtml(origin);
 
   return new NextResponse(html, {
     headers: {
@@ -64,13 +59,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - api (API routes)
-     * - _next (Next.js internals)
-     * - assets (Vite SPA assets)
-     * - Files with extensions (static files)
-     */
     "/((?!api|_next|assets|.*\\.).*)",
   ],
 };

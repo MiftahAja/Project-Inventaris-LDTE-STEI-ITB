@@ -1,9 +1,1 @@
-import { proxy } from "./src/proxy";
-
-export default proxy;
-
-export const config = {
-  matcher: [
-    "/((?!api|_next|assets|.*\\.).*)",
-  ],
-};
+export { default } from "./src/proxy";
