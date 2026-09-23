@@ -14,18 +14,34 @@ export default function CustomerServiceClient() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess(false);
 
     try {
-      // Simulate sending (in real app, would send email)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Mengirim data form ke API Route yang telah kita buat
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Gagal mengirim email");
+      }
+
       setSuccess(true);
       setFormData({ nama: "", email: "", subjek: "", pesan: "" });
-    } catch {
-      setError("Gagal mengirim pesan. Silakan coba lagi.");
+    } catch (err) { 
+      const errorMessage = err instanceof Error ? err.message : "Gagal mengirim pesan. Silakan coba lagi.";
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
